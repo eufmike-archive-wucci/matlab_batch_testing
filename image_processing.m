@@ -60,7 +60,7 @@ outputfilename = strrep(outputfilename, '.ome.tiff', '.tif');
 numFrames= numel(inputfilename_fin);
 
 %% create tiff output
-if sum(inputidx) > 0
+if sum(inputidx) > 0w
     parpool('local', 4)
     parfor i = 1: numFrames
         %create filename variables for output and input
