@@ -41,23 +41,22 @@ inputfiles = removedot({inputfiles.name}');
 outputfiles = dir(fullfile(folder_path, outputfolder1, '*.tif')); 
 outputfiles = removedot({outputfiles.name}');
 
-filenamesA_noext = strrep(inputfiles, '.ome.tiff', ''); %remove extension
-filenamesB_noext = strrep(outputfiles, '.tif', ''); %remove extension
+inputfiles_noext = strrep(inputfiles, '.ome.tiff', ''); %remove extension
+outputfiles_noext = strrep(outputfiles, '.tif', ''); %remove extension
 
-inputidx = ~ismember(filenamesA_noext, filenamesB_noext);
-
-filenames = filenamesA_noext(inputidx)
+inputidx = ~ismember(inputfiles_noext, outputfiles_noext);
 
 %% generate filename
-% inputfilename
-inputfilename = fullfile(folder_path, input_folder, filenames);
-% outputfilename
-outputfilename = fullfile(folder_path, outputfolder1, filenames);
-% change file name
-outputfilename = strrep(outputfilename, '.ome.tiff', '.tif'); 
+% inputfilena
+inputfilename = fullfile(folder_path, input_folder, inputfiles);
+inputfilename_fin = inputfilename(inputidx);
 
 % number of image need to be processed
 numFrames= numel(inputfilename_fin);
+
+%% generate output filename
+outputfilename = fullfile(folder_path, outputfolder1, inputfilename);
+outputfilename = strrep(outputfilename(inputidx), '.ome.tiff', '.tif'); % change file name
 
 %% create tiff output
 if sum(inputidx) > 0
@@ -97,6 +96,8 @@ numFrames= numel(inputfilename_fin);
 %% generate tiff output file list
 outputfilename = fullfile(folder_path, outputfolder1, inputfilename);
 outputfilename = strrep(outputfilename(inputidx), '.ome.tiff', '.tif'); % change file name
+
+
 
 profile off
 toc
