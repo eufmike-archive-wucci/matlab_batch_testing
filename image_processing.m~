@@ -56,7 +56,7 @@ end
 %% Filter 01: Save OME.TIFF to TIF
 filter_order = 1;
 % generate filename
-filenames = fileresults{filter_order};
+filenames = fileresults{1};
 outputfolder = filters(filter_order);
 % construct filenames
 inputfilename = fullfile(folder_path, inputfolder, strcat(filenames, '.ome.tiff'));
@@ -66,12 +66,12 @@ outputfilename = fullfile(folder_path, outputfolder, strcat(filenames, '.tif'));
 numFrames= numel(filenames);
 
 % create tiff output
-if sum(idxresults{filter_order}) > 0
+if sum(idxresults{1}) > 0
     parpool('local', 4)
     parfor i = 1: numFrames
         %create filename variables for output and input
-        inName = inputfilename{i};
-        outName = outputfilename{i};
+        inName = fullfile(inputfilename{i});
+        outName = fullfile(outputfilename{i});
         
 %         % Initialize logging at INFO level
 %         bfInitLogging('INFO');
@@ -93,12 +93,12 @@ if sum(idxresults{filter_order}) > 0
 end
 
 %% Filter 02: Crop and rotate images
-filter_order = 2;
 % generate filename
-filenames = fileresults{filter_order};
+inputidx = fileresults{2};
+filenames = inputfiles_noext(inputidx);
 
-inputfolder = filters(filter_order-1);
-outputfolder = filters(filter_order);
+inputfolder = filters(1);
+outputfolder = filters(2);
 % construct filenames
 inputfilename = fullfile(folder_path, inputfolder, strcat(filenames, '.tif'));
 outputfilename = fullfile(folder_path, outputfolder, strcat(filenames, '.tif'));
@@ -107,16 +107,21 @@ outputfilename = fullfile(folder_path, outputfolder, strcat(filenames, '.tif'));
 numFrames= numel(filenames);
 
 % create tiff output
-if sum(idxresults{filter_order}) > 0
+if sum(idxresults{1}) > 0
     parpool('local', 4)
     parfor i = 1: numFrames
         %create filename variables for output and input
-        inName = inputfilename{i};
-        outName = outputfilename{i};
+        inName = fullfile(inputfilename{i});
+        outName = fullfile(outputfilename{i});
+        
+%         % Initialize logging at INFO level
+%         bfInitLogging('INFO');
+%         % Initialize a new reader per worker as Bio-Formats is not thread safe
+%         r = javaObject('loci.formats.Memoizer', bfGetReader(), 0);
         
         disp(inName);
-        I = imread(inName);
- 
+        I = bfopen(inName);
+        %r.close()
         
         I_TIF = bf2arrayxyc(I);
         I = [];
