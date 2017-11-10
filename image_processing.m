@@ -86,7 +86,6 @@ if sum(idxresults{filter_order}) > 0
         I = [];
 
         imwrite(I_TIF, outName);
-
         I_TIF = [];
     end
     
@@ -116,13 +115,11 @@ if sum(idxresults{filter_order}) > 0
         
         disp(inName);
         I = imread(inName);
- 
         
-        I_TIF = bf2arrayxyc(I);
+        I_TIF = CropRotate(I);
         I = [];
 
         imwrite(I_TIF, outName);
-
         I_TIF = [];
     end
     
