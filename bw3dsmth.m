@@ -1,4 +1,4 @@
-function [outI, stats] = bw3dsmth(I)
+function [outI, stats] = bw3dsmth(I, options)
     %% build label map (bw3D)
     cc = bwconncomp(I);
     L = labelmatrix(cc);
@@ -11,8 +11,8 @@ function [outI, stats] = bw3dsmth(I)
     stats = extendedproperty3D(bw3D);
     
     %% smooth multi-layer BW
-    
-    outbw3D = smth3dobj(bw3D);
+    display(options);
+    outbw3D = smth3dobj(bw3D, options);
 
     outI = outbw3D;
 end

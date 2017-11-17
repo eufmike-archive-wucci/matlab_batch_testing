@@ -1,46 +1,58 @@
-tic
-data = imread(inName);
-toc
+cd '/Users/michaelshih/Documents/wucci_data/batch_test/code';
+clear all;
 
-I = [];
-tic 
-I = imlincomb(1/3, data(:, :, 1), 1/3, data(:, :, 2), 1/3, data(:, :, 3));
-toc
-figure
-imshow(I, [])
-d
+folder_path_1 = '/Users/michaelshih/Documents/wucci_data/batch_test/BWbrain';
+foldernedted = dir(folder_path_1);
+foldernested = {foldernedted.name}';
+foldernested_nodot = removedot(foldernested); 
+inputfilename_1 = fullfile(folder_path_1, foldernested_nodot);
 
-I = [];
-tic
-I = double(data);
-I = sum(I, 3)./3;
-toc
-figure
-imshow(I, [])
+folder_path_2 = '/Users/michaelshih/Documents/wucci_data/batch_test/crop_rotate_resized';
+foldernedted = dir(folder_path_2);
+foldernested = {foldernedted.name}';
+foldernested_nodot = removedot(foldernested); 
+inputfilename_2 = fullfile(folder_path_2, foldernested_nodot);
 
-profile on 
-I = imlincomb(1/3, inI(:, :, 1), 1/3, inI(:, :, 2), 1/3, inI(:, :, 3));
+
+
+for m = 1:1;
+    I1 = imread(inputfilename_1{m});
+    figure
+    imshow(I1, []);
+
+    I2 = imread(inputfilename_2{m});
+    expandsize = [10, 10];
+    Iback = padarray(I2, expandsize, 0, 'both');
+    Iback = imlincomb(1/3, Iback(:, :, 1), 1/3, Iback(:, :, 2), 1/3, Iback(:, :, 3));
+    figure
+    imshow(Iback, []);
+
     
-    BW = imbinarize(I, isodata(I)*0.3);
-    cc = bwconncomp(BW);
-    stats = regionprops('table', cc, 'BoundingBox', 'Area'); 
-    stats.idx = (1:height(stats))';
-    stats = sortrows(stats, 'Area', 'descend');
-    BW2 = ismember(labelmatrix(cc), stats.idx(1));
-    
-    %BW = bwareafilt(BW, 1,'largest');   
-    BW2 = imfill(BW2,'holes');
-    se = strel('disk',2, 0);
-    BW2 = imdilate(BW2, se);
-    BW3D = repmat(BW2, [1, 1, 3]);
-    I_mod = inI.*uint16(BW3D);
-profile off
-profile viewer
-figure
-imshow(I_mod(:, :, 1), [])
+    options = [10, 6, 3, 10, 5, 2]
 
-%% test function
-inName = inputfilename{i};
-Img = imread(inName);
+    A1 = [14:20];
+    A2 = [5:6];
+    A3 = [3:4];
+    A4 = [14:20];
+    A5 = 5;
+    A6 = 2;
+    options = combvec(A1, A2, A3, A4, A5, A6);
+    display(options);
 
-outI = CropRotate(Img);
+    parpool('local', 5)
+
+    parfor n = 1:size(options, 2);
+        [outI, stats] = bw3dsmth(I1, options(:, n));
+        
+        imgOLrgb = outlineoverlap3D(Iback, outI); 
+
+        display(int2str(n));
+        % figure
+        % imshow(imgOLrgb, []);
+        outputfilename = strcat('/Users/michaelshih/Documents/wucci_data/batch_test/test2/file_', int2str(n), '.tif');
+        imwrite(imgOLrgb, outputfilename);
+
+    end
+    delete(gcp('nocreate'))
+end
+

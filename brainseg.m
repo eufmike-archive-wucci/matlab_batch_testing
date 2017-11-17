@@ -29,17 +29,19 @@ function outI = brainseg(I, isolevel)
     %% binary operation for brain area (other channel)
     edgI = [];
     outI2_1 = edgemerge(I(:, :, 2), 'Canny');
-    outI2_2 = edgemerge(I(:, :, 2), 'Roberts');    
+    outI2_2 = edgemerge(I(:, :, 2), 'Roberts');
+       
     edgI(:, :, 1) = imlincomb(1, outI2_1, 1, outI2_2);
     
     outI3_1 = edgemerge(I(:, :, 3), 'Canny');
     outI3_2 = edgemerge(I(:, :, 3), 'Roberts');
+
     edgI(:, :, 2) = imlincomb(1, outI3_1, 1, outI3_2);
     
     edgI = uint8(sum(edgI, 3));
 
     %% find brain area
-    edgethrd = 0.1;
+    edgethrd = 0.12;
     objectcount = 0;
     while objectcount == 0
         bwedge = im2bw(edgI, edgethrd);

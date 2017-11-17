@@ -5,6 +5,9 @@
 % The procedure is rewritten for parallel computing.  
 %
 %
+
+cd '/Users/michaelshih/Documents/wucci_data/batch_test/';
+
 clear all
 tic
 profile on
@@ -137,7 +140,7 @@ if sum(idxresults{filter_order}) > 0
     
 end
 
-%% Filter 04: BW_brain
+%% Filter 04: BWbrain
 filter_order = 4;
 [inputfls, outputfls, numFrames] = filegen(filters, filter_order, folder_path, fileresults, '.tif', '.tif');
 
@@ -179,7 +182,8 @@ if sum(idxresults{filter_order}) > 0
         
         disp(inName);
         I = imread(inName);
-        [I_TIF, stats] = bw3dsmth(I); 
+        options = [10, 6, 3, 10, 5, 2]
+        [I_TIF, stats] = bw3dsmth(I, options); 
         I = [];
         exI = [];
         
@@ -217,12 +221,12 @@ if sum(idxresults{filter_order}) > 0
         exI2 = imlincomb(1/3, exI2(:, :, 1), 1/3, exI2(:, :, 2), 1/3, exI2(:, :, 3));
         
         tic 
-        imgOLrgb = outlineoverlap3D(exI2, I1)
-        
-%         figure
-%         imshow(outI(:, :, :, 2), []);
-%         impixelinfo;
-%         toc        
+        imgOLrgb = outlineoverlap3D(exI2, I1)        
+        figure
+        imshow(imgOLrgb, []);
+        impixelinfo;
+        toc
+
         I = [];
         exI = [];
         
