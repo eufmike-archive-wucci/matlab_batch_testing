@@ -6,7 +6,9 @@
 %
 %
 
-cd '/Users/michaelshih/Documents/wucci_data/batch_test/';
+% cd '/Users/michaelshih/Documents/wucci_data/batch_test/';
+% home
+cd '/Users/major_minor1982/Documents/MATLAB/matlab_batch_testing/'
 
 clear all
 tic
@@ -14,7 +16,8 @@ profile on
 
 %% creat the list for unprocessed files
 % get folder names
-folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
+% folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
+folder_path = '/Volumes/MacProHD1/Dropbox/WUCCI_dropbox/Mast_lab_02/raw_images/';
 foldernedted = dir(folder_path);
 foldernested = {foldernedted.name}';
 foldernested_nodot = removedot(foldernested); 
