@@ -1,4 +1,4 @@
-function outI = brainseg(I, isolevel)
+function outI = brainseg_debug(I, isolevel, outputfolder)
     %% generate a binary for the whole tissue
     % the bw will be used for identifying the midline
 
@@ -25,11 +25,15 @@ function outI = brainseg(I, isolevel)
     %% binary operation for brain area (DAPI)
     % use thresholding strategy for defining DAPI positive region
     bwIdapi = imbinarize(bI(:, :, 1), isodata(bI(:, :, 1))*0.5);
+    imwrite(bwIdapi, fullfile(outputfolder, 'BWdapi.png')); 
+    figure
+    imshow(bwIdapi, []);
 
     %% binary operation for brain area (other channel)
     edgI = [];
-    outI2_1 = edgemerge(I(:, :, 2), 'Canny');
-    outI2_2 = edgemerge(I(:, :, 2), 'Roberts'); 
+    outI2_1 = edgemerge(I(:, :, 2), 'Canny'); 
+    outI2_2 = edgemerge(I(:, :, 2), 'Roberts');
+    
     edgI(:, :, 1) = imlincomb(1, outI2_1, 1, outI2_2);
     
     outI3_1 = edgemerge(I(:, :, 3), 'Canny');
@@ -37,7 +41,8 @@ function outI = brainseg(I, isolevel)
     edgI(:, :, 2) = imlincomb(1, outI3_1, 1, outI3_2);
     
     edgI = uint8(sum(edgI, 3));
-
+    figure
+    imshow(edgI, []);
     %% find brain area
     edgethrd = 0.12;
     objectcount = 0;
