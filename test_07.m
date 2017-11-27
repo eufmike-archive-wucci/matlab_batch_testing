@@ -21,8 +21,10 @@ for m = 1:1
 
     expandsize = [10, 10];
     exI = padarray(I, expandsize, 0, 'both');
-    I_TIF = brainseg_debug(exI, 0.3, outputfolder); 
+    options = {true, outputfolder}
+    I_TIF = brainseg_debug(exI, options); 
+    % I_TIF = brainseg(exI, 0.3); 
     figure
 	imshow(I_TIF, []);
-	imwrite(I_TIF, fullfile(outputfolder, '06_I_TIF.png'));
+	% imwrite(I_TIF, fullfile(outputfolder, '06_I_TIF.png'));
 end

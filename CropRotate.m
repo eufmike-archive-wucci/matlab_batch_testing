@@ -1,13 +1,13 @@
 function outI = CropRotate(inI)
     
-    I = imlincomb(1/3, inI(:, :, 1), 1/3, inI(:, :, 2), 1/3, inI(:, :, 3));
+    I = imlincomb(1/9, inI(:, :, 1), 4/9, inI(:, :, 2), 4/9, inI(:, :, 3));
     
     BW = imbinarize(I, isodata(I)*0.3);
     cc = bwconncomp(BW);
     stats = regionprops('table', cc, 'BoundingBox', 'Area'); 
     stats.idx = (1:height(stats))';
     stats = sortrows(stats, 'Area', 'descend');
-    BW2 = ismember(labelmatrix(cc), stats.idx(1));  
+    BW2 = ismember(labelmatrix(cc), stats.idx(1));   
     BW2 = imfill(BW2,'holes');
     se = strel('disk',2, 0);
     BW2 = imdilate(BW2, se);

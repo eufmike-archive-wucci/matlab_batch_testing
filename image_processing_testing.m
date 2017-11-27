@@ -208,7 +208,7 @@ if sum(idxresults{filter_order}) > 0
         
         disp(inName);
         I = imread(inName);
-        options = [20, 6, 4, 20, 5, 2];
+        options = [20, 6, 4, 20, 6, 1];
         [I_TIF, stats] = bw3dsmth(I, options); 
         I = [];
         exI = [];
