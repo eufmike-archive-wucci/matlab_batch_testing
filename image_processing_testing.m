@@ -16,14 +16,15 @@ profile on
 
 %% creat the list for unprocessed files
 % get folder names
-% folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
 folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
+% folder_path = '/Volumes/wuccistaff/Mike/Mast_Lab_03';
 foldernedted = dir(folder_path);
 foldernested = {foldernedted.name}';
 foldernested_nodot = removedot(foldernested); 
 
 % create input file list
 inputfolder = 'raw_images';
+% inputfolder = 'raw_output_ometif';
 inputfiles = dir(fullfile(folder_path, inputfolder, '*.ome.tiff')); 
 inputfiles = removedot({inputfiles.name}');
 inputfiles = strrep(inputfiles, '.ome.tiff', '.ometiff');
@@ -35,8 +36,8 @@ numberfilters = length(filters); % get the count of filter
 idxresults = {};
 fileresults = {};
 % check the availability of outputfolder and check the uncompleted files 
-for i = 1:numberfilters
-    foldername = filters{i};
+for m = 1:numberfilters
+    foldername = filters{m};
     
     % the existance of folder
     if any(strcmp(foldernested_nodot, foldername)) == 0
@@ -50,8 +51,8 @@ for i = 1:numberfilters
     outputfiles_noext = rmext(outputfiles); 
     
     inputidx = ~ismember(inputfiles_noext, outputfiles_noext);
-    idxresults{i} = inputidx;
-    fileresults{i} = inputfiles_noext(inputidx);
+    idxresults{m} = inputidx;
+    fileresults{m} = inputfiles_noext(inputidx);
     
 end
 
@@ -60,6 +61,8 @@ if sum(sum(cell2mat(idxresults))) > 0
 end
 
 %% Filter 01: Save OME.TIFF to TIF
+fprintf('\nFilter 01 start\n');
+
 filter_order = 1;
 % generate filename
 filenames = fileresults{filter_order};
@@ -73,10 +76,11 @@ numFrames= numel(filenames);
 
 % create tiff output
 if sum(idxresults{filter_order}) > 0
-    parfor i = 1: numFrames
+    parfor m = 1: numFrames
+    % for m = 1: numFrames
         %create filename variables for output and input
-        inName = inputfilename{i};
-        outName = outputfilename{i};
+        inName = inputfilename{m};
+        outName = outputfilename{m};
         
 %         % Initialize logging at INFO level
 %         bfInitLogging('INFO');
@@ -118,17 +122,20 @@ if sum(idxresults{filter_order}) > 0
     end
     
 end
+fprintf('\nFilter 01 end\n');
 
 %% Filter 02: Crop and rotate images
+fprintf('\nFilter 02 start\n');
 filter_order = 2;
 [inputfls, outputfls, numFrames] = filegen(filters, filter_order, folder_path, fileresults, '.tif', '.tif');
 
 % create tiff output
 if sum(idxresults{filter_order}) > 0
-    parfor i = 1: numFrames
+    parfor m = 1: numFrames
+    % for m = 1: numFrames
         %create filename variables for output and input
-        inName = inputfls{i};
-        outName = outputfls{i};
+        inName = inputfls{m};
+        outName = outputfls{m};
         
         disp(inName);
         I = imread(inName);
@@ -141,22 +148,25 @@ if sum(idxresults{filter_order}) > 0
     end
     
 end
+fprintf('\nFilter 02 end\n');
+
 
 %% Filter 03: resize
+fprintf('\nFilter 03 start\n');
+
 filter_order = 3;
 [inputfls, outputfls, numFrames] = filegen(filters, filter_order, folder_path, fileresults, '.tif', '.tif');
 
 % create tiff output
 if sum(idxresults{filter_order}) > 0
-    % parpool('local', 4)
-    parfor i = 1: numFrames
+    parfor m = 1: numFrames
+    % for m = 1: numFrames
         %create filename variables for output and input
-        inName = inputfls{i};
-        outName = outputfls{i};
+        inName = inputfls{m};
+        outName = outputfls{m};
         
-        disp(inName);
         I = imread(inName);
-        
+
         I_TIF = imresize(I, 0.1);
         I = [];
 
@@ -166,23 +176,38 @@ if sum(idxresults{filter_order}) > 0
     
 end
 
+fprintf('\nFilter 03 end\n');
+
 %% Filter 04: BWbrain
+fprintf('\nFilter 04 start\n');
+
 filter_order = 4;
 [inputfls, outputfls, numFrames] = filegen(filters, filter_order, folder_path, fileresults, '.tif', '.tif');
 
+fprintf('\nall input filename %s', inputfls{:});
+fprintf('\nall output filename %s', outputfls{:});
+
 % create tiff output
 if sum(idxresults{filter_order}) > 0
-    parfor i = 1: numFrames
+    parfor m = 1: numFrames
+    % for m = 1: numFrames
+    % for m = 1: 1
         %create filename variables for output and input
-        inName = inputfls{i};
-        outName = outputfls{i};
+        inName = inputfls{m};
+        outName = outputfls{m};
         
-        disp(inName);
+        fprintf('\noutput filename %s', outName);
+        fprintf('\ninput filename %s', inName);
+        
+        fprintf('\nstart reading img...');
         I = imread(inName);
-        
+        fprintf('\nend reading img...')
+
         expandsize = [10, 10];
         exI = padarray(I, expandsize, 0, 'both');
-        I_TIF = brainseg(exI, 0.3);        
+        
+        options = {false};
+        I_TIF = brainseg(exI, options);        
 %         figure
 %         imshow(outI, []);
 %         impixelinfo;
@@ -194,33 +219,50 @@ if sum(idxresults{filter_order}) > 0
     end
     
 end
+fprintf('\nFilter 04 end\n');
 
 %% Filter 05: BWsmth
+fprintf('\nFilter 05 start\n');
+
 filter_order = 5;
 [inputfls, outputfls, numFrames] = filegen(filters, filter_order, folder_path, fileresults, '.tif', '.mat');
 
 % create tiff output
 if sum(idxresults{filter_order}) > 0
-    parfor i = 1: numFrames
+    parfor m = 1: numFrames
+    % for m = 1: numFrames
+    % for m = 1: 1
         %create filename variables for output and input
-        inName = inputfls{i};
-        outName = outputfls{i};
+        inName = inputfls{m};
+        outName = outputfls{m};
         
         disp(inName);
         I = imread(inName);
-        options = [20, 6, 4, 20, 6, 1];
-        [I_TIF, stats] = bw3dsmth(I, options); 
+        fprintf('05 %s', inName);
+        fprintf('\nbw2bwary function start...\n');
+        bwI3D = bw2bwary(I); 
+        fprintf('\nbw2bwary function end...\n');
+
+        options = {true, [20, 6, 4, 20, 6, 1]};
+        fprintf('\nsmthbwary function start...\n');
+        bwI3Dsmth = smthbwary(bwI3D, options);
+        fprintf('\nsmthbwary function end...\n');
+
         I = [];
         exI = [];
         
-        parsave(outName, I_TIF);
-        I_TIF = [];
+        % save(outName, 'bwI3Dsmth');
+        parsave(outName, bwI3Dsmth);
+        bwI3Dsmth = [];
         
     end
     
 end
+fprintf('\nFilter 05 end\n');
 
 %% Filter 06: BWoutline
+fprintf('\nFilter 06 start\n');
+
 filter_order = 6;
 [inputfls, outputfls, numFrames] = filegen(filters, filter_order, folder_path, fileresults, '.mat', '.tif');
 inputfls1 = inputfls;
@@ -230,14 +272,19 @@ inputfls2 = fullfile(folder_path, 'crop_rotate_resized', strcat(filenames, '.tif
 
 % create tiff output
 if sum(idxresults{filter_order}) > 0
-    parfor i = 1: numFrames
+    parfor m = 1: numFrames
+    % for m = 1: numFrames
+    % for m = 1: 1
         %create filename variables for output and input
-        inName1 = inputfls1{i}; %BW
-        inName2 = inputfls2{i}; %allimage
-        outName = outputfls{i};
-        
+        inName1 = inputfls1{m}; %BW
+        inName2 = inputfls2{m}; %allimage
+        outName = outputfls{m};
+
+        fprintf('inName1:\n');
         disp(inName1);
+        fprintf('inName2:\n');
         disp(inName2);
+
         data = load(inName1);   
         I1 = data.variable;
         
@@ -246,21 +293,18 @@ if sum(idxresults{filter_order}) > 0
         exI2 = padarray(I2, expandsize, 0, 'both');
         exI2 = imlincomb(1/3, exI2(:, :, 1), 1/3, exI2(:, :, 2), 1/3, exI2(:, :, 3));
         
-        tic 
-        imgOLrgb = outlineoverlap3D(exI2, I1)        
-        figure
-        imshow(imgOLrgb, []);
-        impixelinfo;
-        toc
-
-        I = [];
-        exI = [];
-        
+        imgOLrgb = outlineoverlap3D(exI2, I1);
+     
         imwrite(imgOLrgb, outName);
+        I1 = [];
+        I2 = [];
+        exI2 = [];
         imgOLrgb = [];
         
     end
 end
+
+fprintf('\nFilter 06 end\n');
 
 %% end
 delete(gcp('nocreate'))

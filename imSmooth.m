@@ -4,10 +4,10 @@ function blurredimg = imSmooth(I, iteration)
         iteration = 1;
     end
     
-    m =ones(3);
+    m = ones(3);
     blurredimg = I;    
     for i = 1:iteration    
-        blurredimg = conv2(blurredimg, m, 'same');
+        blurredimg = imgaussfilt(blurredimg, 2);
     end
 end
 
