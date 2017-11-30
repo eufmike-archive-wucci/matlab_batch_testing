@@ -16,8 +16,8 @@ profile on
 
 %% creat the list for unprocessed files
 % get folder names
-folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
-% folder_path = '/Volumes/wuccistaff/Mike/Mast_Lab_03';
+% folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
+folder_path = '/Volumes/wuccistaff/Mike/Mast_Lab_03';
 
 foldernedted = dir(folder_path);
 foldernested = {foldernedted.name}';
@@ -34,9 +34,16 @@ inputfiles_noext = rmext(inputfiles);
 % define the filter
 filters = {'tif_images'; 'crop_rotate'; 'crop_rotate_resized'; 'BWbrain'; 'BWsmth'; 'BWoutlinergb'; 'selectedROI'};
 fileExt = {'.tif'; '.tif'; '.tif'; '.tif'; '.mat'; '.tif'; '.tif'};
+
+% filterrange ver 1.0: 
+filters = filters(1:6);
+fileExt = fileExt(1:6);
+
 numberfilters = length(filters); % get the count of filter
 idxresults = {};
 fileresults = {};
+
+
 % check the availability of outputfolder and check the uncompleted files 
 for m = 1:numberfilters
     foldername = filters{m};
@@ -57,27 +64,35 @@ for m = 1:numberfilters
     fileresults{m} = inputfiles_noext(inputidx);
     
 end
-idxresultsMat = cell2mat(idxresults);
-numFiles = size(idxresultsMat, 1);
+idxresultsMat_raw = cell2mat(idxresults);
+idxfilename = logical(sum(idxresultsMat_raw, 2));
+idxresultsMat = idxresultsMat_raw(idxfilename, :);
 
 filenames = {};
+filenames{1} = fullfile(folder_path, inputfolder, strcat(inputfiles_noext(idxfilename), '.ome.tif'));
 % generate filename array 
 for m = 1:numberfilters
     foldername = filters{m};
     ext = fileExt{m};
-    filenames{m} = fullfile(folder_path, foldername, strcat(inputfiles_noext, ext)); 
+    filenames{m+1} = fullfile(folder_path, foldername, strcat(inputfiles_noext(idxfilename), ext)); 
 end
 
+numFiles = sum(idxfilename);
+fprintf('\nnumber of files: %d\n', numFiles);
 
 % Switch parfor according to the file counts
-% if numFiles < 2
-%   parforArg = 0;
-% else
-%   parforArg = 4;
-% end
+if numFiles < 2
+  parforArg = 0;
+else
+  parforArg = 4;
+end
+fprintf('\nnumber of workers: %d\n', parforArg);
 
+parpool('local', 4);
+parfor m = 1:numFiles
 % parfor (m = 1:numFiles, parforArg)
-for m = 1:numFiles
+% for m = 1:1
+% for m = 1:numFiles 
     fprintf('\nForloop start...');
     if (sum(idxresultsMat(m, :)) == 0)
         continue;
@@ -87,59 +102,68 @@ for m = 1:numFiles
     % Filter 01: bf2arrayxyc.m
     
     filter_order = 1;
-    fprintf('\nFilter %d start\n', filter_order);
-
-    
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
     % generate and construct filename
     inputfilename = filenames{filter_order}{m}; 
     outputfilename = filenames{filter_order+1}{m};
     fprintf('\nFilter %d input filename: %s\n', filter_order, inputfilename);
     fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
-    I = bfopen(inputfilename);
-    
-    omeMeta = I{1,4};
-    ChannelCount = omeMeta.getChannelCount(0); %  number of channels
-    ChannelCount = uint8(ChannelCount);
 
-    channelname = [];
-    exwave = [];
-    for n = 1:ChannelCount;
-        x = n-1; 
-        channelnameTemp = omeMeta.getChannelName(0, x);
-        channelname{n} = channelnameTemp.toCharArray'; 
-        exwaveTemp = omeMeta.getChannelExcitationWavelength(0, x);
-        exwave{n} = exwaveTemp.value.double;
+    if (idxresultsMat(m, filter_order) == 1)
+        
+        I = bfopen(inputfilename);       
+        omeMeta = I{1,4};
+        ChannelCount = omeMeta.getChannelCount(0); %  number of channels
+        ChannelCount = uint8(ChannelCount);
 
+        channelname = [];
+        exwave = [];
+        for n = 1:ChannelCount;
+            x = n-1; 
+            channelnameTemp = omeMeta.getChannelName(0, x);
+            channelname{n} = channelnameTemp.toCharArray'; 
+            exwaveTemp = omeMeta.getChannelExcitationWavelength(0, x);
+            exwave{n} = exwaveTemp.value.double;
+
+        end
+        channelinfo = table([1:3]', channelname', [cell2mat(exwave)]');
+        
+        channelinfo.Properties.VariableNames = {'Idx','ChannelName', 'ChannelExWave'};
+        channelinfo = sortrows(channelinfo, 'ChannelExWave');
+        Idx = channelinfo.Idx;
+
+        % **** Apply filter **************
+        I_TIF = bf2arrayxyc(I, Idx);
+        imwrite(I_TIF, outputfilename);
+        % ********************************
+    else
+        if (idxresultsMat(m, filter_order+1) == 1)
+            I_TIF = imread(outputfilename);
+        end       
     end
-    channelinfo = table([1:3]', channelname', [cell2mat(exwave)]');
-    
-    channelinfo.Properties.VariableNames = {'Idx','ChannelName', 'ChannelExWave'};
-    channelinfo = sortrows(channelinfo, 'ChannelExWave');
-    Idx = channelinfo.Idx;
+    I = [];
 
-    % **** Apply filter **************
-    I_TIF = bf2arrayxyc(I, Idx);
-    imwrite(I_TIF, outputfilename);
-    % ********************************
-
-    
     fprintf('\nFilter %d end\n', filter_order);
 
     % ================================================================================================
     % Filter 02: CropRotate.m
 
     filter_order = 2;
-    fprintf('\nFilter %d start\n', filter_order);
-
-    
-    % generate and construct filename
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
+     % generate and construct filename
     outputfilename = filenames{filter_order+1}{m};
-    fprintf('\nFilter %d output filename: %s', filter_order, outputfilename);
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
     
-    % **** Apply filter ************** 
-    I_TIF = CropRotate(I_TIF);
-    imwrite(I_TIF, outputfilename);
-    % ********************************
+    if (idxresultsMat(m, filter_order) == 1)    
+        % **** Apply filter ************** 
+        I_TIF = CropRotate(I_TIF);
+        imwrite(I_TIF, outputfilename);
+        % ********************************
+    else
+        if (idxresultsMat(m, filter_order+1) == 1)
+            I_TIF = imread(outputfilename);
+        end
+    end
 
     fprintf('\nFilter %d end\n', filter_order);
     
@@ -147,36 +171,48 @@ for m = 1:numFiles
     % Filter 03: imresize.m
 
     filter_order = 3;
-    fprintf('\nFilter %d start\n', filter_order);
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
     
     % generate and construct filename
     outputfilename = filenames{filter_order+1}{m};
-    fprintf('\nFilter %d output filename: %s', filter_order, outputfilename);
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
     
-    % **** Apply filter ************** 
-    I_TIF_resized = imresize(I_TIF, 0.1);
-    imwrite(I_TIF_resized, outputfilename);
-    % ********************************
+    if (idxresultsMat(m, filter_order) == 1)
 
-    fprintf('\nFilter %d start\n', filter_order);
+        % **** Apply filter ************** 
+        I_TIF_resized = imresize(I_TIF, 0.1);
+        imwrite(I_TIF_resized, outputfilename);
+        % ********************************
+
+    else       
+        I_TIF_resized = imread(outputfilename);
+    end    
+    I_TIF = [];
+    fprintf('\nFilter %d end\n', filter_order);
 
     % ================================================================================================
     % Filter 04: brainseg.m
 
     filter_order = 4;
-    fprintf('\nFilter %d start\n', filter_order);
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
     
     % generate and construct filename
     outputfilename = filenames{filter_order+1}{m};
-    fprintf('\nFilter %d output filename: %s', filter_order, outputfilename);
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
     
-    % **** Apply filter ************** 
-    expandsize = [10, 10];
-    exI = padarray(I_TIF, expandsize, 0, 'both');
-    options = {false};
-    brainsegI = brainseg(exI, options);        
-    imwrite(brainsegI, outputfilename);
-    % ********************************
+    if (idxresultsMat(m, filter_order) == 1)
+
+        % **** Apply filter ************** 
+        expandsize = [10, 10];
+        exI = padarray(I_TIF_resized, expandsize, 0, 'both');
+        options = {false};
+        brainsegI = brainseg(exI, options);        
+        imwrite(brainsegI, outputfilename);
+        % ********************************
+
+    else
+        brainsegI = imread(outputfilename);
+    end 
 
     fprintf('\nFilter %d end\n', filter_order);
 
@@ -184,18 +220,25 @@ for m = 1:numFiles
     % Filter 05: bw2bwary.m & smthbwary.m
 
     filter_order = 5;
-    fprintf('\nFilter %d start\n', filter_order);
-    
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
+
     % generate and construct filename
     outputfilename = filenames{filter_order+1}{m};
-    fprintf('\nFilter %d output filename: %s', filter_order, outputfilename);
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
     
-    % **** Apply filter ************** 
-    bwI3D = bw2bwary(brainsegI); 
-    options = {true, [20, 6, 4, 20, 6, 1]};
-    bwI3Dsmth = smthbwary(bwI3D, options);
-    parsave(outputfilename, bwI3Dsmth);
-    % ********************************
+    if (idxresultsMat(m, filter_order) == 1)
+
+        % **** Apply filter ************** 
+        bwI3D = bw2bwary(brainsegI); 
+        options = {true, [20, 6, 4, 20, 6, 1]};
+        bwI3Dsmth = smthbwary(bwI3D, options);
+        parsave(outputfilename, bwI3Dsmth);
+        % ********************************
+
+    else
+        data = load(outputfilename);
+        bwI3Dsmth = data.variable;
+    end
 
     fprintf('\nFilter %d end\n', filter_order);
 
@@ -203,19 +246,26 @@ for m = 1:numFiles
     % Filter 06: outlineoverlap3D.m
 
     filter_order = 6;
-    fprintf('\nFilter %d start\n', filter_order);
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
     
     % generate and construct filename
     outputfilename = filenames{filter_order+1}{m};
-    fprintf('\nFilter %d output filename: %s', filter_order, outputfilename);
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
     
-    % **** Apply filter **************
-    expandsize = [10, 10];
-    sum3cI = padarray(I_TIF_resized, expandsize, 0, 'both');
-    sum3cI = imlincomb(1/3, sum3cI(:, :, 1), 1/3, sum3cI(:, :, 2), 1/3, sum3cI(:, :, 3));
-    imgOLrgb = outlineoverlap3D(sum3cI, bwI3Dsmth);
-    imwrite(imgOLrgb, outputfilename);
-    % ********************************
+
+    if (idxresultsMat(m, filter_order) == 1)
+
+        % **** Apply filter **************
+        expandsize = [10, 10];
+        sum3cI = padarray(I_TIF_resized, expandsize, 0, 'both');
+        sum3cI = imlincomb(1/3, sum3cI(:, :, 1), 1/3, sum3cI(:, :, 2), 1/3, sum3cI(:, :, 3));
+        imgOLrgb = outlineoverlap3D(sum3cI, bwI3Dsmth);
+        imwrite(imgOLrgb, outputfilename);
+        % ********************************
+
+    else        
+        
+    end
 
     fprintf('\nFilter %d end\n', filter_order);
 

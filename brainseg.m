@@ -19,7 +19,7 @@ function outI = brainseg(I, options)
     if (options{1} == 1) && (length(options{2}) == 0)
         error('myfuns:brainseg: Fourth Input must be a existing folder');
     end
-    fprintf('\ninetuning check finish...');
+    fprintf('\nfinetuning check finish...');
 
     % set default inputs
     optargs = {true, 'empty'};
@@ -33,19 +33,18 @@ function outI = brainseg(I, options)
     % use the "edge_merge" function for finding edge 
     % the function merge at least two different edge detection method
     fprintf('\nload image start...');
-    bI = []; 
-    for i = 1:size(I, 3)
-        bI(:, :, i) = imSmooth(I(:, :, i));
-    end
+    
+    bldaptI = imSmooth(I(:, :, 1));
+    
     fprintf('\nload image end...');
 
     %% binary operation for brain area (DAPI)
     % use thresholding strategy for defining DAPI positive region
-    figure; imshow(bI(:, :, 1), []);
+    figure; imshow(bldaptI, []);
     fprintf('\ncreate DAPI image start...');
-    % bwIdapi = imbinarize(im2double(bI(:, :, 1)), isodata(bI(:, :, 1)));
-    % bwIdapi = imbinarize(uint16(bI(:, :, 1)), 'global');
-    bwIdapi = imbinarize(uint16(bI(:, :, 1)), 'adaptive', 'Sensitivity', 0.9);
+    % bwIdapi = imbinarize(im2double(bldaptI), isodata(bI(:, :, 1)));
+    % bwIdapi = imbinarize(uint16(bldaptI), 'global');
+    bwIdapi = imbinarize(uint16(bldaptI), 'adaptive', 'Sensitivity', 0.9);
 
     bwIdapi = bwareafilt(bwIdapi, 1);
     fprintf('\ncreate DAPI image end...');
@@ -64,9 +63,8 @@ function outI = brainseg(I, options)
     edgI(:, :, 2) = imlincomb(1, outI3_1, 1, outI3_2);
     fprintf('\nedge detection end...');
     
-    if options{1} == 1, imwrite(edgI(:, :, 1), fullfile(ftFolder, '03_488.png')), end;
-    if options{1} == 1, imwrite(edgI(:, :, 2), fullfile(ftFolder, '04_647.png')), end;
-
+    % if options{1} == 1, imwrite(edgI(:, :, 1), fullfile(ftFolder, '03_488.png')), end;
+    % if options{1} == 1, imwrite(edgI(:, :, 2), fullfile(ftFolder, '04_647.png')), end;
 
     fprintf('\nbrain detection start...');
     edgI = uint8(sum(edgI, 3));
@@ -75,9 +73,11 @@ function outI = brainseg(I, options)
     imshow(edgI, []);
 
     %% find brain area
-    edgethrd = 0.12
-    objectcount = 0
+    edgethrd = 0.12;
+    objectcount = 0;
+    x = 1;
     while objectcount < 1
+        fprintf('\nwhileloop round %d', x);
         fprintf('\nedge detection binarize');
         bwedge = imbinarize(edgI, edgethrd);
         figure
@@ -109,8 +109,9 @@ function outI = brainseg(I, options)
         fprintf('\nobejct number: %d', objectcount);
         edgethrd = edgethrd - 0.02;
         fprintf('\noedgethrd: %d', edgethrd);
+        x = x+1
     end
-    fprintf('\n brain detection end...');
+    fprintf('\nbrain detection end...');
     figure; imshow(edgebwBrain, []);
     % if options{1} == 1, imwritÇe(edgebwBrain, fullfile(ftFolder, '05_BW.png')), end;
     
@@ -119,5 +120,5 @@ function outI = brainseg(I, options)
     % if options{1} == 1, fprintf('\nsize: %d\n', cc.NumObjects), end;
 
     outI = edgebwBrain;
-    fprintf('\nbrainseg function end...');
+    fprintf('\nbrainseg function end...\n');
 end

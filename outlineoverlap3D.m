@@ -1,5 +1,5 @@
 function img_ol_rgb = outlineoverlap3D(I, BW_3D)  
-    fprintf('outlineoverlap3D function start:\n');
+    fprintf('\n function outlineoverlap3D.m start:');
     outline_3D_r = [];
     outline_3D_g = [];
     outline_3D_b = [];
@@ -25,5 +25,5 @@ function img_ol_rgb = outlineoverlap3D(I, BW_3D)
     outline_3D_b_max = max(outline_3D_b, [], 3);
 
     img_ol_rgb = cat(3, outline_3D_r_max, outline_3D_g_max, outline_3D_b_max);
-    fprintf('outlineoverlap3D function end:\n');
+    fprintf('\n function outlineoverlap3D.m end:\n');
 end

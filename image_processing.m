@@ -16,8 +16,8 @@ profile on
 
 %% creat the list for unprocessed files
 % get folder names
-folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
-% folder_path = '/Volumes/wuccistaff/Mike/Mast_Lab_03';
+% folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
+folder_path = '/Volumes/wuccistaff/Mike/Mast_Lab_03';
 foldernedted = dir(folder_path);
 foldernested = {foldernedted.name}';
 foldernested_nodot = removedot(foldernested); 

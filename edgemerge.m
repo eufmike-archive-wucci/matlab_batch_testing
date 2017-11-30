@@ -1,18 +1,19 @@
 function outI = edgemerge(I, method, iteration, level, fudgeFactor)
-% for Canny repeating steps
-
+    fprintf('\nedgemerge.m');
     if ~exist('iteration'); iteration = 10; end
     if ~exist('level'); level = 1; end
     if ~exist('fudgeFactor'); fudgeFactor = 0.1; end
 
-% option need to include matrix of method and fudgeFactor
     outI = [];    
-    for i = 1:iteration   
+    x = 1;
+    for m = 1:iteration
+        fprintf('\nforloop %d', x);   
         [~, threshold] = edge(I, method);
-        edgeim = edge(I, method, threshold * fudgeFactor * i);   
+        edgeim = edge(I, method, threshold * fudgeFactor * m);   
         se = strel('disk', level, 0);
         edgeim = imdilate(edgeim, se);
-        outI(:, :, i) = edgeim;
+        outI(:, :, m) = edgeim;
+        x = x+1; 
     end
     outI = uint8(sum(outI, 3));
 end

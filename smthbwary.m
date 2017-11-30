@@ -5,8 +5,8 @@ function outbw3d = smthbwary(bw3d, options)
     % 1. ftStatus: finetuning mode, on: TRUE; off: FALSE(default);
     % 2. ftFolder: finetuning output folder, must be a existing folder;
 
-    if options{1} == 1, fprintf('\nfunction start...\n'), end;
-
+    fprintf('\nfunction smthbwary.m start...');
+    
     % check if options variable
     numvarargs = length(options);
 
@@ -26,7 +26,7 @@ function outbw3d = smthbwary(bw3d, options)
     pars = optargs{2}; 
 
     fprintf('\nParameters:\n');
-    fprintf('\n%d\n', pars);
+    fprintf('%d, ', pars);
     se01 = pars(1);
     se02 = pars(2);
     se03 = pars(3);
@@ -35,7 +35,7 @@ function outbw3d = smthbwary(bw3d, options)
     se06 = pars(6);
 
     outbw3d = [];
-    fprintf('\nsize: %d\n', size(bw3d, 4));
+    fprintf('\nsize: %d', size(bw3d, 4));
 
     for i = 1:size(bw3d, 4)
         
@@ -63,5 +63,5 @@ function outbw3d = smthbwary(bw3d, options)
         outbw3d(:, :, :, i) = I;
         
     end
-    if options{1} == 1, fprintf('\nfunction end...\n'), end;
+    fprintf('\nfunction smthbwary.m end...\n');
 end
