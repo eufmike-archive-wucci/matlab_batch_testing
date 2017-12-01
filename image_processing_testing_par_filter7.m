@@ -16,8 +16,8 @@ profile on
 
 %% creat the list for unprocessed files
 % get folder names
-% folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
-folder_path = '/Volumes/wuccistaff/Mike/Mast_Lab_03';
+folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
+% folder_path = '/Volumes/wuccistaff/Mike/Mast_Lab_03';
 
 foldernedted = dir(folder_path);
 foldernested = {foldernedted.name}';
@@ -36,8 +36,8 @@ filters = {'tif_images'; 'crop_rotate'; 'crop_rotate_resized'; 'BWbrain'; 'BWsmt
 fileExt = {'.tif'; '.tif'; '.tif'; '.tif'; '.mat'; '.tif'; '.tif'};
 
 % filterrange ver 1.0: 
-filters = filters(1:6);
-fileExt = fileExt(1:6);
+filters = filters(1:7);
+fileExt = fileExt(1:7);
 
 numberfilters = length(filters); % get the count of filter
 idxresults = {};
@@ -88,9 +88,9 @@ else
 end
 fprintf('\nnumber of workers: %d\n', parforArg);
 
-% parpool('local', 4);
-% parfor m = 1:numFiles
-parfor (m = 1:numFiles, parforArg)
+parpool('local', 4);
+parfor m = 1:numFiles
+% parfor (m = 1:numFiles, parforArg)
 % for m = 1:1
 % for m = 1:numFiles 
     fprintf('\nForloop start...');
@@ -206,7 +206,7 @@ parfor (m = 1:numFiles, parforArg)
         expandsize = [10, 10];
         exI = padarray(I_TIF_resized, expandsize, 0, 'both');
         options = {false};
-        brainsegI = brainseg(exI, options);        
+        brainsegI = brainseg(exI, options);
         imwrite(brainsegI, outputfilename);
         % ********************************
 
@@ -264,12 +264,48 @@ parfor (m = 1:numFiles, parforArg)
         % ********************************
 
     else        
+        imgOLrgb = imread(outputfilename);
+    end
+
+    fprintf('\nFilter %d end\n', filter_order);
+
+    % ================================================================================================
+    % Filter 07: selectedROI.m
+
+    filter_order = 7;
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
+    
+    % generate and construct filename
+    outputfilename = filenames{filter_order+1}{m};
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
+
+    if (idxresultsMat(m, filter_order) == 1)
+
+        % **** Apply filter **************
+        stats = extendedproperty3D(bwI3Dsmth);
+        figure(m)
+        imshow(imgOLrgb); 
+        hold on
+        for n = 1: height(stats);
+            t = text(stats.Centroid(n, 1), stats.Centroid(n, 2), num2str(stats.idx(n)));
+            t.Color = 'red';
+            t.FontSize = 20;
+        end
+        hold off
+        fig = gcf;
+        saveas(fig, outputfilename);
+        export_fig(outputfilename, '-native');
+
+        % ********************************
+    else        
         
     end
 
     fprintf('\nFilter %d end\n', filter_order);
 
     % ================================================================================================
+
+    fprintf('\nRemove variables\n');
     % clear variable
     I = [];
     I_TIF = [];

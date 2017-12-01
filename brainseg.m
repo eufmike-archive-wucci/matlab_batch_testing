@@ -40,7 +40,7 @@ function outI = brainseg(I, options)
 
     %% binary operation for brain area (DAPI)
     % use thresholding strategy for defining DAPI positive region
-    figure; imshow(bldaptI, []);
+    % figure; imshow(bldaptI, []);
     fprintf('\ncreate DAPI image start...');
     % bwIdapi = imbinarize(im2double(bldaptI), isodata(bI(:, :, 1)));
     % bwIdapi = imbinarize(uint16(bldaptI), 'global');
@@ -49,7 +49,7 @@ function outI = brainseg(I, options)
     bwIdapi = bwareafilt(bwIdapi, 1);
     fprintf('\ncreate DAPI image end...');
     if options{1} == 1, imwrite(bwIdapi, fullfile(ftFolder, '02_BWdapi.png')), end;
-    figure; imshow(bwIdapi, []);
+    % figure; imshow(bwIdapi, []);
 
     fprintf('\nedge detection start...');
     %% binary operation for brain area (other channel)
@@ -69,8 +69,8 @@ function outI = brainseg(I, options)
     fprintf('\nbrain detection start...');
     edgI = uint8(sum(edgI, 3));
 
-    figure
-    imshow(edgI, []);
+    % figure
+    % imshow(edgI, []);
 
     %% find brain area
     edgethrd = 0.12;
@@ -80,8 +80,8 @@ function outI = brainseg(I, options)
         fprintf('\nwhileloop round %d', x);
         fprintf('\nedge detection binarize');
         bwedge = imbinarize(edgI, edgethrd);
-        figure
-        imshow(bwedge, []);
+        % figure
+        % imshow(bwedge, []);
         % clean edge
         % refine edge and display
         fprintf('\nset se');
@@ -91,8 +91,8 @@ function outI = brainseg(I, options)
         bwedge = imcomplement(bwedge);
         bwedge = bwareaopen(bwedge, 500);
         bwedge = imclearborder(bwedge); %remove background 
-        figure
-        imshow(bwedge, []);
+        % figure
+        % imshow(bwedge, []);
         fprintf('\ncolocalize with dapi');
         % colocalize with dapi
         edgebwBrain = bitand(bwIdapi, bwedge);
@@ -100,7 +100,7 @@ function outI = brainseg(I, options)
         % edgebwBrain = bwareafilt(edgebwBrain, [40000, ]);
         fprintf('\nfilter by size');
         edgebwBrain = bwareafilt(edgebwBrain, 30);
-        figure; imshow(edgebwBrain, []);
+        % figure; imshow(edgebwBrain, []);
 
         % return number of objects
         fprintf('\ncount obejct number');
@@ -112,7 +112,7 @@ function outI = brainseg(I, options)
         x = x+1
     end
     fprintf('\nbrain detection end...');
-    figure; imshow(edgebwBrain, []);
+    % figure; imshow(edgebwBrain, []);
     % if options{1} == 1, imwritÇe(edgebwBrain, fullfile(ftFolder, '05_BW.png')), end;
     
     cc = bwconncomp(edgebwBrain);
