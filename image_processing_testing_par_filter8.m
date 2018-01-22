@@ -10,14 +10,15 @@
 % home
 cd '/Users/michaelshih/Documents/wucci_data/batch_test/code';
 
-clear all
+close all;
+clear all;
 tic
 profile on
 
 %% creat the list for unprocessed files
 % get folder names
-folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
-% folder_path = '/Volumes/wuccistaff/Mike/Mast_Lab_03';
+% folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
+folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab_current/';
 
 foldernedted = dir(folder_path);
 foldernested = {foldernedted.name}';
@@ -31,16 +32,24 @@ inputfiles = removedot({inputfiles.name}');
 inputfiles = strrep(inputfiles, '.ome.tiff', '.ometiff');
 inputfiles_noext = rmext(inputfiles);
 
-filtercount = 11;
+% inputfiles_noext = inputfiles_noext(1:389);
+inputfiles_noext = inputfiles_noext(1:325);
+% inputfiles_noext = inputfiles_noext(1:4);
+
+filtercount = 14;
 % define the filter
-filters = {'tif_images'; 'crop_rotate'; 'crop_rotate_resized'; ...
-            'BWbrain'; 'BWoutlinergb'; ...
-            'BWsmth'; 'BWsmthoutlinergb';...
-            'SelectedROI'; 'SelectedBW'; 'SelectedBrainGrey'; 'SelectedBrainRGB'};
+filters = {'01_tif_images'; '02_crop_rotate'; '03_crop_rotate_resized'; ...
+            '04_BWbrain'; '05_BWoutlinergb'; ...
+            '06_SelectedROI'; '07_SelectedBWraw';...
+            '08_BWsmth'; '09_BWsmthoutlinergb'; '10_BWsmthadj';...
+            '11_SelectedBrainGrey'; '12_SelectedBrainRGB';...
+            '13_crop_rotate_resized_4x'; '14_SelectedBrainRGB_4x'};
 fileExt = {'.tif'; '.tif'; '.tif'; ... 
             '.tif'; '.tif'; ...
-            '.mat'; '.tif'; ...
-            '.tif'; '.tif'; '.tif'; '.tif'};
+            '.tif'; '.tif'; ...
+            '.mat'; '.tif'; '.tif'; ...
+            '.tif'; '.tif'; ...
+            '.tif'; '.tif'};
 
 % filterrange ver 1.0: 
 filters = filters(1:filtercount);
@@ -50,8 +59,14 @@ idxresults = {};
 fileresults = {};
 
 % house keeping files 
-BRFilename = fullfile(folder_path, 'data', 'brainregion.csv');
+brainsegparfile = fullfile(folder_path, 'code', 'data', 'brainsegpar.csv');
+brainsegpar = csvread(brainsegparfile);
+smthparfile = fullfile(folder_path, 'code', 'data', 'smthpar.csv');
+smthpar = csvread(smthparfile);
+BRFilename = fullfile(folder_path, 'code', 'data', 'brainregion.csv');
 brainROIcode = csvread(BRFilename);
+expandlevelfile = fullfile(folder_path, 'code', 'data', 'expand.csv');
+expandlevel = csvread(expandlevelfile);
 
 % check the availability of outputfolder and check the uncompleted files 
 for m = 1:filtercount
@@ -70,12 +85,13 @@ for m = 1:filtercount
     
     inputidx = ~ismember(inputfiles_noext, outputfiles_noext);
     idxresults{m} = inputidx;
-    fileresults{m} = inputfiles_noext(inputidx);
-    
+    fileresults{m} = inputfiles_noext(inputidx);    
 end
+
 idxresultsMat_raw = cell2mat(idxresults);
 idxfilename = logical(sum(idxresultsMat_raw, 2));
 idxresultsMat = idxresultsMat_raw(idxfilename, :);
+idxlocation = find(idxfilename);
 
 filenames = {};
 filenames{1} = fullfile(folder_path, inputfolder, strcat(inputfiles_noext(idxfilename), '.ome.tiff'));
@@ -212,9 +228,10 @@ parfor (m = 1:numFiles, parforArg)
     if (idxresultsMat(m, filter_order) == 1)
 
         % **** Apply filter ************** 
-        expandsize = [10, 10];
+        expandsize = [30, 30];
         exI = padarray(I_TIF_resized, expandsize, 0, 'both');
-        options = {false};
+        fprintf('\nbrainsegpar: %d', brainsegpar(idxlocation(m), :)); 
+        options = {false, 'empty', brainsegpar(idxlocation(m), :)};
         brainsegI = brainseg(exI, options);
         imwrite(brainsegI, outputfilename);
         % ********************************
@@ -235,7 +252,7 @@ parfor (m = 1:numFiles, parforArg)
     outputfilename = filenames{filter_order+1}{m};
     fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
     
-    expandsize = [10, 10];
+    expandsize = [30, 30];
     sum3cI = padarray(I_TIF_resized, expandsize, 0, 'both');
     sum3cI = imlincomb(1/3, sum3cI(:, :, 1), 1/3, sum3cI(:, :, 2), 1/3, sum3cI(:, :, 3));
     
@@ -260,16 +277,81 @@ parfor (m = 1:numFiles, parforArg)
         saveas(fig, outputfilename);
         export_fig(outputfilename, '-native');
         % ********************************
-
+        close(m)
     else
 
     end
 
     fprintf('\nFilter %d end\n', filter_order);
+    % ================================================================================================
+    % Filter 06: folder: SelectedROI
 
+    filter_order = filter_order + 1;
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
+    
+    % generate and construct filename
+    outputfilename = filenames{filter_order+1}{m};
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
+    
+    % house keeping variables
+    code = brainROIcode(idxlocation(m), :);
+    code = code(code>0);
+    fprintf('\ncode: %d %d\n', code);
+
+    cc = bwconncomp(brainsegI);
+    L = labelmatrix(cc);
+    brainsegI_selected = ismember(L, code);
+
+    % house keeping variables
+    stats = extendedproperty(brainsegI_selected);
+
+    if (idxresultsMat(m, filter_order) == 1)
+
+        % **** Apply filter **************     
+        imgsmth3DOLrgb = outlineoverlap(sum3cI, brainsegI_selected);
+        figure(m)
+        imshow(imgsmth3DOLrgb); 
+        hold on
+        for n = 1: height(stats);
+            t = text(stats.Centroid(n, 1), stats.Centroid(n, 2), num2str(stats.idx(n)));
+            t.Color = 'red';
+            t.FontSize = 20;
+        end
+        hold off
+        fig = gcf;
+        saveas(fig, outputfilename);
+        export_fig(outputfilename, '-native');
+        close(m)
+        % ********************************
+    else        
+        
+    end
+
+    fprintf('\nFilter %d end\n', filter_order);
 
     % ================================================================================================
-    % Filter 06: bw2bwary.m & smthbwary.m
+    % Filter 07: folder: SelectedBWraw
+
+    filter_order = filter_order + 1;
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
+    
+    % generate and construct filename
+    outputfilename = filenames{filter_order+1}{m};
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
+
+    if (idxresultsMat(m, filter_order) == 1)
+
+        % **** Apply filter **************
+        imwrite(brainsegI_selected, outputfilename);
+        % ********************************
+    else        
+        brainsegI_selected = imread(outputfilename);
+    end
+
+    fprintf('\nFilter %d end\n', filter_order);
+
+    % ================================================================================================
+    % Filter 08: bw2bwary.m & smthbwary.m
 
     filter_order = filter_order + 1;
     fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
@@ -281,8 +363,12 @@ parfor (m = 1:numFiles, parforArg)
     if (idxresultsMat(m, filter_order) == 1)
 
         % **** Apply filter ************** 
-        bwI3D = bw2bwary(brainsegI); 
-        options = {true, [20, 6, 4, 20, 6, 1]};
+        bwI3D = bw2bwary(brainsegI_selected);
+        if (size(bwI3D, 1) == 0 & size(bwI3D, 2) == 0)
+            bwI3D = zeros(size(brainsegI_selected));
+        end
+        fprintf('\nsmthpar: %s', smthpar(idxlocation(m), :));  
+        options = {true, smthpar(idxlocation(m), :)};
         bwI3Dsmth = smthbwary(bwI3D, options);
         parsave(outputfilename, bwI3Dsmth);
         % ********************************
@@ -293,11 +379,9 @@ parfor (m = 1:numFiles, parforArg)
     end
 
     fprintf('\nFilter %d end\n', filter_order);
-
-
-
+    
     % ================================================================================================
-    % Filter 07: folder: BWsmthoutlinergb 
+    % Filter 09: folder: BWsmthoutlinergb 
     % outlineoverlap3D.m & extendedproperty3D.m
 
     filter_order = filter_order + 1;
@@ -306,14 +390,13 @@ parfor (m = 1:numFiles, parforArg)
     % generate and construct filename
     outputfilename = filenames{filter_order+1}{m};
     fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
-    
-    % house keeping variables
-    stats3D = extendedproperty3D(bwI3Dsmth);
 
+    stats3D = extendedproperty3D(bwI3Dsmth);
+    
     if (idxresultsMat(m, filter_order) == 1)
 
         % **** Apply filter **************
-        % expandsize = [10, 10];
+        % expandsize = [30, 30];
         % sum3cI = padarray(I_TIF_resized, expandsize, 0, 'both');
         % sum3cI = imlincomb(1/3, sum3cI(:, :, 1), 1/3, sum3cI(:, :, 2), 1/3, sum3cI(:, :, 3));
         img3DOLrgb = outlineoverlap3D(sum3cI, bwI3Dsmth);
@@ -340,8 +423,40 @@ parfor (m = 1:numFiles, parforArg)
     fprintf('\nFilter %d end\n', filter_order);
 
     % ================================================================================================
-    % Filter 08: folder: SelectedROI
+    % Filter 10: folder: BWsmthoutlinergb
+    % 10_BWsmthadj
+    filter_order = filter_order + 1;
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
+    
+    % generate and construct filename
+    outputfilename = filenames{filter_order+1}{m};
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
 
+    if (idxresultsMat(m, filter_order) == 1)
+
+        % **** Apply filter **************
+        bwIsmth = max(bwI3Dsmth, [], 4);
+
+        fprintf('\nexpand level: %d', expandlevel(idxlocation(m), :)); 
+        explvl = expandlevel(idxlocation(m), :);
+        se = strel('disk', explvl, 0);
+        bwIsmth = imdilate(bwIsmth, se);
+        bwIsmth = imfill(bwIsmth, 'holes');
+        bwIsmth = imerode(bwIsmth, se);
+        imwrite(bwIsmth, outputfilename);
+        % figure
+        % imshow(bwIsmth, []);
+        % ********************************
+    else        
+        bwIsmth = imread(outputfilename);
+        bwIsmth = uint16(bwIsmth/255);
+    end
+
+    fprintf('\nFilter %d end\n', filter_order);
+
+
+    % % ================================================================================================
+    % Filter 11: folder: SelectedBrainGrey
     filter_order = filter_order + 1;
     fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
     
@@ -349,72 +464,28 @@ parfor (m = 1:numFiles, parforArg)
     outputfilename = filenames{filter_order+1}{m};
     fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
     
-    % house keeping variables
-    code = brainROIcode(m, :);
-    code = code(code>0);
-    bwI3DsmthExtc = bwI3Dsmth(:, :, :, code);
+    % figure
+    % imshow(bwIsmth, []);
+
+    cc = bwconncomp(bwIsmth);
+    borderstats = regionprops('table', cc, 'BoundingBox');   
+    
 
     if (idxresultsMat(m, filter_order) == 1)
 
-        % **** Apply filter **************     
-        imgsmth3DOLrgb = outlineoverlap3D(sum3cI, bwI3DsmthExtc);
-        stats3DExtc = stats3D(code, :);
-        figure(m)
-        imshow(imgsmth3DOLrgb); 
-        hold on
-        for n = 1: height(stats3DExtc);
-            t = text(stats3DExtc.Centroid(n, 1), stats3DExtc.Centroid(n, 2), num2str(stats3DExtc.idx(n)));
-            t.Color = 'red';
-            t.FontSize = 20;
+        % **** Apply filter **************        
+        braingrey = sum3cI.*uint16(bwIsmth);
+        
+        if height(borderstats) > 0    
+            border = findmaxbw(borderstats.BoundingBox);
+            braingrey = imcrop(braingrey, border);
         end
-        hold off
-        fig = gcf;
-        saveas(fig, outputfilename);
-        export_fig(outputfilename, '-native');
-        close(m)
-        % ********************************
-    else        
         
-    end
-
-    fprintf('\nFilter %d end\n', filter_order);
-
-    % ================================================================================================
-    % Filter 09: folder: SelectedBW
-
-    filter_order = filter_order + 1;
-    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
-    
-    % generate and construct filename
-    outputfilename = filenames{filter_order+1}{m};
-    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
-
-    if (idxresultsMat(m, filter_order) == 1)
-
-        % **** Apply filter **************
-        bwIsmthExtc = max(bwI3DsmthExtc, [], 4);
-        imwrite(bwIsmthExtc, outputfilename);
-        % ********************************
-    else        
-        bwIsmthExtc = imread(outputfilename);
-    end
-
-    fprintf('\nFilter %d end\n', filter_order);
-
-    % ================================================================================================
-    % Filter 10: folder: SelectedBrainGrey
-    filter_order = filter_order + 1;
-    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
-    
-    % generate and construct filename
-    outputfilename = filenames{filter_order+1}{m};
-    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
-
-    if (idxresultsMat(m, filter_order) == 1)
-
-        % **** Apply filter **************
-        braingrey = sum3cI.*uint16(bwIsmthExtc); 
+        expandsize = [5, 5];
+        braingrey = padarray(braingrey, expandsize, 0, 'both');
         imwrite(braingrey, outputfilename);
+        % figure
+        % imshow(braingrey, []);
         % ********************************
     else        
         
@@ -423,7 +494,8 @@ parfor (m = 1:numFiles, parforArg)
     fprintf('\nFilter %d end\n', filter_order);
 
     % ================================================================================================
-    % Filter 11: folder: SelectedBrainRGB
+    % Filter 12: folder: SelectedBrainRGB
+    
     filter_order = filter_order + 1;
     fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
     
@@ -434,14 +506,116 @@ parfor (m = 1:numFiles, parforArg)
     if (idxresultsMat(m, filter_order) == 1)
 
         % **** Apply filter **************
-        expandsize = [10, 10];
+        expandsize = [30, 30];
         sum3cI = padarray(I_TIF_resized, expandsize, 0, 'both');
-        brainrgb = sum3cI.*uint16(repmat(bwIsmthExtc, [1, 1, 3])); 
+        brainrgb = sum3cI.*uint16(repmat(bwIsmth, [1, 1, 3])); 
+
+        imgsize = size(brainrgb);
+        for n = 1:imgsize(3)
+            Iv = reshape(brainrgb(:, :, n), 1, []);
+            Ivnoz = Iv(Iv>0);
+            top = sort(Ivnoz, 'descend');
+            top1 = mean(top(1, 1:round(size(Ivnoz,2)*0.01)));
+            bottom = sort(Ivnoz, 'ascend');
+            bottom1 = mean(bottom(1, 1:round(size(Ivnoz,2)*0.01)));
+            brainrgb(:, :, n) = histnml(brainrgb(:, :, n), top1, bottom1); 
+        end
+        
+        if height(borderstats) > 0    
+            border = findmaxbw(borderstats.BoundingBox);
+            brainrgb = imcrop(brainrgb, border);
+        end
+
+        expandsize = [5, 5];
+        brainrgb = padarray(brainrgb, expandsize, 0, 'both');
+
         imwrite(brainrgb, outputfilename, 'tif');
+        % figure
+        % imshow(brainrgb, []);
         % ********************************
     else        
-        
+
     end
+
+    fprintf('\nFilter %d end\n', filter_order);
+
+    % ================================================================================================
+    % Filter 13: imresize.m
+
+    filter_order = filter_order + 1;
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
+    
+    % generate and construct filename
+    inputfilename = filenames{3}{m};
+    outputfilename = filenames{filter_order+1}{m};
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
+    
+    if (idxresultsMat(m, filter_order) == 1)
+
+        % **** Apply filter ************** 
+        I_TIF = imread(inputfilename);
+        I_TIF_resized_4x = imresize(I_TIF, 0.4);
+        imwrite(I_TIF_resized_4x, outputfilename, 'tif');
+        % ********************************
+
+    else       
+        I_TIF_resized_4x = imread(outputfilename);
+    end    
+    I_TIF = [];
+    fprintf('\nFilter %d end\n', filter_order);
+
+    % ================================================================================================
+    % Filter 14: 14_SelectedBrainRGB_4x
+
+    filter_order = filter_order + 1;
+    fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});
+    
+    % generate and construct filename
+    outputfilename = filenames{filter_order + 1}{m};
+    fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
+
+    increased_factor = 4;
+
+    if (idxresultsMat(m, filter_order) == 1)
+
+        % **** Apply filter **************
+        expandsize = [30*increased_factor, 30*increased_factor];
+        sum3cI = padarray(I_TIF_resized_4x, expandsize, 0, 'both');
+        sum3cI_size = size(sum3cI);
+        bwIsmth_resized_4x = imresize(bwIsmth, sum3cI_size(1:2));
+        
+        brainrgb_4x = sum3cI.*uint16(repmat(bwIsmth_resized_4x, [1, 1, 3])); 
+
+        imgsize = size(brainrgb_4x);
+        for n = 1:imgsize(3)
+            Iv = reshape(brainrgb_4x(:, :, n), 1, []);
+            Ivnoz = Iv(Iv>0);
+            top = sort(Ivnoz, 'descend');
+            top1 = mean(top(1, 1:round(size(Ivnoz,2)*0.01)));
+            bottom = sort(Ivnoz, 'ascend');
+            bottom1 = mean(bottom(1, 1:round(size(Ivnoz,2)*0.01)));
+            brainrgb_4x(:, :, n) = histnml(brainrgb_4x(:, :, n), top1, bottom1); 
+        end
+        
+        cc = bwconncomp(bwIsmth_resized_4x);
+        borderstats = regionprops('table', cc, 'BoundingBox'); 
+
+        if height(borderstats) > 0    
+            border = findmaxbw(borderstats.BoundingBox);
+            brainrgb_4x = imcrop(brainrgb_4x, border);
+        end
+
+        expandsize = [5, 5];
+        brainrgb_4x = padarray(brainrgb_4x, expandsize, 0, 'both');
+
+        imwrite(brainrgb_4x, outputfilename, 'tif');
+        % figure
+        % imshow(brainrgb_4x, []);
+        % ********************************
+    else        
+
+    end
+
     fprintf('\nFilter %d end\n', filter_order);
 
     % ================================================================================================
@@ -456,10 +630,20 @@ parfor (m = 1:numFiles, parforArg)
     bwI3Dsmth = [];
     imgOLrgb =[];
     sum3cI = [];
-    bwI3DsmthExt = [];
-    bwIsmthExtc = [];
+    bwI3Dsmth = [];
+    bwIsmth = [];
     braingrey = [];
     brainrgb = [];
+    Iv = [];
+    Ivnoz = [];
+    top = [];
+    top1 = [];
+    bottom = [];
+    bottom1 = [];
+
+    I_TIF_resized_4x = [];
+    brainrgb_4x = [];
+    bwIsmth_resized_4x = [];
 
 end
 delete(gcp('nocreate'))

@@ -24,6 +24,7 @@ function outbw3d = smthbwary(bw3d, options)
     optargs = {false, [20, 6, 4, 20, 6, 1]};
     ftStatus = optargs{1};
     pars = optargs{2}; 
+    pars = options{2};
 
     fprintf('\nParameters:\n');
     fprintf('%d, ', pars);
