@@ -2,8 +2,8 @@ close all; clear all;
 cd '/Users/michaelshih/Documents/wucci_data/batch_test/code';
 
 folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab_current/';
-inputfolder = '12_SelectedBrainRGB';
-outputfolder = 'raw_for_construction'
+inputfolder = '14_SelectedBrainRGB_4x';
+outputfolder = 'raw_for_construction_4x'
 
 % input the reviewed file-pick as table
 fileselection_path = fullfile(folder_path, 'code', 'data', 'filenamelist.csv');

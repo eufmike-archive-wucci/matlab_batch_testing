@@ -9,15 +9,16 @@ profile on
 %% creat the list for unprocessed files
 % get folder names
 % folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
-folder_path = '/Volumes/wuccistaff/Mike/Mast_Lab_03/';
+folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab_current/';
 
 foldernedted = dir(folder_path);
 foldernested = {foldernedted.name}';
 foldernested_nodot = removedot(foldernested); 
 
 % create input file list
-inputfolder = '02_crop_rotate';
-outputfolder = 'test_01_equhisto';
+inputfolder = '03_crop_rotate_resized';
+outputfolder = 'Mast_Lab_final';
+outputsubfolder = '02_equhist_1';
 
 inputfiles = dir(fullfile(folder_path, inputfolder, '*.tif')); 
 inputfiles = removedot({inputfiles.name}');
@@ -25,7 +26,7 @@ inputfiles = removedot({inputfiles.name}');
 inputfiles_noext = rmext(inputfiles);
 
 inputfiles = fullfile(folder_path, inputfolder, strcat(inputfiles_noext, '.tif'));
-outputfiles = fullfile(folder_path, outputfolder, strcat(inputfiles_noext, '.tif'));
+outputfiles = fullfile(folder_path, outputfolder, outputsubfolder, strcat(inputfiles_noext, '.tif'));
 
 numFiles = length(inputfiles);
 
@@ -38,8 +39,8 @@ fprintf('\nnumber of workers: %d\n', parforArg);
 
 topbottom = [0.01, 0.08; 0.01, 0.01; 0.01, 0.01];
 
-% parfor (m = 1:numFiles, parforArg)
-for m = 1:numFiles
+parfor (m = 1:numFiles, parforArg)
+% for m = 1:numFiles
 	
 	inputfilename = inputfiles{m};
 	fprintf('\nfile name: %s\n', inputfilename);

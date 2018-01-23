@@ -9,27 +9,24 @@ profile on
 %% creat the list for unprocessed files
 % get folder names
 % folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
-folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab_current/';
 
-foldernedted = dir(folder_path);
-foldernested = {foldernedted.name}';
-foldernested_nodot = removedot(foldernested); 
+inputfolder = '/Volumes/LaCie_1TB/Mast_Lab_final/07_brain_4_aligned';
 
-% create input file list
-inputfolder = 'raw_image_ometiff_10';
-% inputfolder = 'raw_output_ometif';
-inputfiles = dir(fullfile(folder_path, inputfolder, '*.ome.tiff')); 
+inputfiles = dir(inputfolder);
 inputfiles = removedot({inputfiles.name}');
-% inputfiles = strrep(inputfiles, '.ome.tiff', '.ometiff');
-% inputfiles_noext = rmext(inputfiles);
+inputfiles = fullfile(inputfolder, inputfiles);
 
-inputfiles = fullfile(folder_path, inputfolder, inputfiles);
-inputfiles_t = regexprep(inputfiles, '-Export-[0-9][0-9]_', '-Export-01_');
+outputfolder = '/Volumes/LaCie_DataStorage/Mast_Lab_current/raw_for_construction';
+
+outputfiles = dir(outputfolder);
+outputfiles = removedot({outputfiles.name}');
+outputfiles = fullfile(inputfolder, outputfiles);
+
 for m = 1:length(inputfiles)
 % for m = 1
 	display(m);
-	if ~strcmp(inputfiles{m}, inputfiles_t{m})		
-		movefile(inputfiles{m}, inputfiles_t{m});
+	if ~strcmp(inputfiles{m}, outputfiles{m})		
+		movefile(inputfiles{m}, outputfiles{m});
 	end
 end
 
