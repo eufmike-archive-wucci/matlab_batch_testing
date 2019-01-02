@@ -18,23 +18,26 @@ profile on
 %% creat the list for unprocessed files
 % get folder names
 % folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
-folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab_current/';
+folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab/Mast_Lab_002';
+imgfolder = 'resource';
+img_path = fullfile(folder_path, imgfolder);
 
-foldernedted = dir(folder_path);
+foldernedted = dir(img_path);
 foldernested = {foldernedted.name}';
 foldernested_nodot = removedot(foldernested); 
 
 % create input file list
-inputfolder = 'raw_images';
+inputfolder = 'raw_output';
 % inputfolder = 'raw_output_ometif';
-inputfiles = dir(fullfile(folder_path, inputfolder, '*.ome.tiff')); 
+inputfiles = dir(fullfile(img_path, inputfolder, '*.ome.tiff')); 
 inputfiles = removedot({inputfiles.name}');
 inputfiles = strrep(inputfiles, '.ome.tiff', '.ometiff');
 inputfiles_noext = rmext(inputfiles);
 
+% display(inputfiles_noext);
 % inputfiles_noext = inputfiles_noext(1:389);
-inputfiles_noext = inputfiles_noext(1:325);
 % inputfiles_noext = inputfiles_noext(1:4);
+inputfiles_noext = inputfiles_noext(1:254);
 
 filtercount = 14;
 % define the filter
@@ -88,18 +91,46 @@ for m = 1:filtercount
     fileresults{m} = inputfiles_noext(inputidx);    
 end
 
+% check the existance of finetuning folder
+if any(strcmp(foldernested_nodot, 'finetuning')) == 0
+            mkdir(fullfile(folder_path, 'finetuning'));
+end 
+
+%% check finetuning output folders
+ftFolder = fullfile(folder_path, 'finetuning');
+
+ftsteps = {'01_dapi_binary'; '02_488'; '03_647'; ...
+        '04_bwedge'; '05_bwedge_dilation'; '06_bwedge_rmbkg'; '07_BW';};
+
+ftFolder_folderlist = dir(ftFolder);
+ftFoldernested = {ftFolder_folderlist.name}';
+ftFoldernested_nodot = removedot(ftFoldernested); 
+
+ftstepscount = size(ftsteps, 1);
+
+for m = 1:ftstepscount
+    foldername = ftsteps{m};
+    % the existance of folder
+    if any(strcmp(ftFoldernested_nodot, foldername)) == 0
+            mkdir(fullfile(ftFolder, foldername));
+    end
+end
+
 idxresultsMat_raw = cell2mat(idxresults);
 idxfilename = logical(sum(idxresultsMat_raw, 2));
 idxresultsMat = idxresultsMat_raw(idxfilename, :);
 idxlocation = find(idxfilename);
 
+% create input file dir
 filenames = {};
-filenames{1} = fullfile(folder_path, inputfolder, strcat(inputfiles_noext(idxfilename), '.ome.tiff'));
-% generate filename array 
+filename_noext = inputfiles_noext(idxfilename);
+filenames{1} = fullfile(img_path, inputfolder, strcat(filename_noext, '.ome.tiff'));
+
+% generate input filename array 
 for m = 1:filtercount
     foldername = filters{m};
     ext = fileExt{m};
-    filenames{m+1} = fullfile(folder_path, foldername, strcat(inputfiles_noext(idxfilename), ext)); 
+    filenames{m+1} = fullfile(folder_path, foldername, strcat(filename_noext, ext)); 
 end
 
 numFiles = sum(idxfilename);
@@ -133,7 +164,7 @@ parfor (m = 1:numFiles, parforArg)
     outputfilename = filenames{filter_order+1}{m};
     fprintf('\nFilter %d input filename: %s\n', filter_order, inputfilename);
     fprintf('\nFilter %d output filename: %s\n', filter_order, outputfilename);
-
+    
     if (idxresultsMat(m, filter_order) == 1)
         
         I = bfopen(inputfilename);       
@@ -169,7 +200,8 @@ parfor (m = 1:numFiles, parforArg)
     I = [];
 
     fprintf('\nFilter %d end\n', filter_order);
-
+    
+    
     % ================================================================================================
     % Filter 02: CropRotate.m
 
@@ -191,6 +223,8 @@ parfor (m = 1:numFiles, parforArg)
     end
 
     fprintf('\nFilter %d end\n', filter_order);
+    
+    
     
     % ================================================================================================
     % Filter 03: imresize.m
@@ -214,7 +248,8 @@ parfor (m = 1:numFiles, parforArg)
     end    
     I_TIF = [];
     fprintf('\nFilter %d end\n', filter_order);
-
+    
+    
     % ================================================================================================
     % Filter 04: brainseg.m
 
@@ -231,7 +266,17 @@ parfor (m = 1:numFiles, parforArg)
         expandsize = [30, 30];
         exI = padarray(I_TIF_resized, expandsize, 0, 'both');
         fprintf('\nbrainsegpar: %d', brainsegpar(idxlocation(m), :)); 
-        options = {false, 'empty', brainsegpar(idxlocation(m), :)};
+        % set options: 
+        % option 1: parameter for the brain segmentation
+        % option 2: ftStatus_show: show finetuning img on: TRUE; off: FALSE(default)
+        % option 3: ftStatus_save: save finetuning img on: TRUE; off: FALSE(default)
+        % option 4: ftFolder: dir for finetuning img
+        % option 5: ftFile: curret image name
+        
+        % finetune folder path
+        ftFile = strcat(char(filename_noext(m)), '.tif');
+        
+        options = {brainsegpar(idxlocation(m), :), false, true, ftFolder, ftFile};
         brainsegI = brainseg(exI, options);
         imwrite(brainsegI, outputfilename);
         % ********************************
@@ -242,6 +287,8 @@ parfor (m = 1:numFiles, parforArg)
 
     fprintf('\nFilter %d end\n', filter_order);
 
+    
+    
     % ================================================================================================
     % Filter 05: outlineoverlap.m
 
@@ -283,6 +330,9 @@ parfor (m = 1:numFiles, parforArg)
     end
 
     fprintf('\nFilter %d end\n', filter_order);
+    
+    continue
+    
     % ================================================================================================
     % Filter 06: folder: SelectedROI
 

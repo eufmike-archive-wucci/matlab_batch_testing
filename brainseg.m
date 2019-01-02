@@ -4,31 +4,37 @@ function outI = brainseg(I, options)
     % brainseg create a binary for brain region
     % I: 3 channel raw image 
     % finetuning options: 
-    % 1. ftStatus: finetuning mode, on: TRUE; off: FALSE(default);
-    % 2. ftFolder: finetuning output folder, must be a existing folder;
-
+    % option 1: parameter for the brain segmentation
+    % option 2: ftStatus_show: show finetuning img on: TRUE; off: FALSE(default)
+    % option 3: ftStatus_save: save finetuning img on: TRUE; off: FALSE(default)
+    % option 4: ftFolder: dir for finetuning img
+    % option 5: ftFile: curret image name
+  
     % check if options variable
     numvarargs = length(options);
-    if numvarargs > 3
+    if numvarargs > 5
         error('myfuns:brainseg: TooManyInputs', ...
-            'requires at most 3 optional inputs');
+            'requires at most 5 optional inputs');
     end
     fprintf('\nvariable check finish...');
 
     % check if the second variable a dir when finetuning mode is on
-    if (options{1} == 1) && (length(options{2}) == 0)
+    if (options{3} == 1) && (length(options{5}) == 0)
         error('myfuns:brainseg: Fourth Input must be a existing folder');
     end
     fprintf('\nfinetuning check finish...');
 
-    % set default inputs
-    optargs = {true, 'empty', [0.9, 19, 1, 2, 0, 1, 10]};
+    % load options and save as variables
     optargs(1:numvarargs) = options(:); 
-    [ftStatus, ftFolder, pars] =  optargs{:};
-    fprintf('\nftStatus: %d', ftStatus);
-    fprintf('\nftFolder: %s', ftFolder);
+    [pars, ftStatus_show, ftStatus_save, ftFolder, ftFile] =  optargs{:};
+    
     fprintf('\nParameters:\n');
     fprintf('%d, ', pars);
+    fprintf('\nftStatus: %s', ftStatus_show);
+    fprintf('\nftFolder: %s', ftStatus_save);
+    fprintf('\nftFolder: %s', ftFolder);
+    fprintf('\nftFolder: %s', ftFile);
+    
     dapithrd = pars(1);
     edgethrd = pars(2);
     dillvl1 = pars(3);
@@ -38,62 +44,69 @@ function outI = brainseg(I, options)
     bwcount = pars(7);
     fprintf('\narg set finish...');
 
-    %% binary operation for brain area (other channels)
-    % use the "edge_merge" function for finding edge 
-    % the function merge at least two different edge detection method
-    fprintf('\nload image start...');
+    
+    %% binary operation for brain area
+    
+
+    %% binary operation for brain area (DAPI)
+    
+    % smooth DAPI image
+    fprintf('\nblur DAPI channel start...');
     
     bldaptI = imSmooth(I(:, :, 1));
     
-    fprintf('\nload image end...');
-
-    %% binary operation for brain area (DAPI)
+    fprintf('\nblur DAPI channel end...');
+    
     % use thresholding strategy for defining DAPI positive region
-    % figure; imshow(bldaptI, []);
-    fprintf('\ncreate DAPI image start...');
-    % bwIdapi = imbinarize(im2double(bldaptI), isodata(bI(:, :, 1)));
-    % bwIdapi = imbinarize(uint16(bldaptI), 'global');
+    fprintf('\ncreate DAPI binary start...');
     bwIdapi = imbinarize(uint16(bldaptI), 'adaptive', 'Sensitivity', dapithrd);
-
+    
+    % remove the biggest object which should be the outter frame (background)
     bwIdapi = bwareafilt(bwIdapi, 1);
-    fprintf('\ncreate DAPI image end...');
-    if options{1} == 1, imwrite(bwIdapi, fullfile(ftFolder, '02_BWdapi.tif')), end;
-    if options{1} == 1, 
+    fprintf('\ncreate DAPI binary end...');
+    
+    % show image
+    if ftStatus_show == 1
         figure
         imshow(bwIdapi, []);
     end;
-
+    
+    % save image
+    if ftStatus_save == 1 
+        imwrite(bwIdapi, fullfile(ftFolder, '01_dapi_binary', ftFile)); 
+    end;
+    
     fprintf('\nedge detection start...');
+    
     %% binary operation for brain area (other channel)
+    % use the "edge_merge" function for finding edge 
+    % the function merge at least two different edge detection method
     edgI = [];
     outI2_1 = edgemerge(I(:, :, 2), 'Canny'); 
     outI2_2 = edgemerge(I(:, :, 2), 'Roberts');  
     edgI(:, :, 1) = imlincomb(1, outI2_1, 1, outI2_2);
-    % edgI1 = edgI(:, :, 1);
 
     outI3_1 = edgemerge(I(:, :, 3), 'Canny');
     outI3_2 = edgemerge(I(:, :, 3), 'Roberts');
     edgI(:, :, 2) = imlincomb(1, outI3_1, 1, outI3_2);
-    % edgI2 = edgI(:, :, 2);
     fprintf('\nedge detection end...');
     edgI = uint8(edgI);
 
-    % figure
-    % imshow(edgI(:, :, 1), []);
-    % figure
-    % imshow(edgI(:, :, 2), []);
-    if options{1} == 1, imwrite(edgI(:, :, 1), fullfile(ftFolder, '03_488.png')), end;
-    if options{1} == 1, imwrite(edgI(:, :, 2), fullfile(ftFolder, '04_647.png')), end;
-    % whos('edgI1');
-    % whos('edgI2');
+    % save image
+    if ftStatus_save == 1 
+        imwrite(edgI(:, :, 1), fullfile(ftFolder, '02_488', ftFile)); 
+        imwrite(edgI(:, :, 2), fullfile(ftFolder, '03_647', ftFile));
+    end;
+    
     fprintf('\nbrain detection start...');
+    
     edgI = sum(edgI, 3);
-    whos('edgI');
-    if options{1} == 1, 
+    % whos('edgI');
+    
+    if ftStatus_show == 1
         figure
         imshow(edgI, []);
     end;
-    
 
     %% find brain area
     objectcount = 0;
@@ -103,58 +116,79 @@ function outI = brainseg(I, options)
         fprintf('\nwhileloop round %d', x);
         fprintf('\nedge detection binarize');
         bwedge = imbinarize(edgI, edgethrd);
-        if options{1} == 1, 
+        if ftStatus_show == 1 
             figure
             imshow(bwedge, []);
         end;
+        
         % colocalize with dapi
         bwedge = bitand(bwIdapi, bwedge);
-        if options{1} == 1, 
+        
+        if ftStatus_show == 1
             figure
             imshow(bwedge, []);
         end;
+        
+        if ftStatus_save == 1
+            imwrite(bwedge, fullfile(ftFolder, '04_bwedge', ftFile));
+        end;
+        
         % clean edge
         % refine edge and display
         fprintf('\nset se');
         fprintf('\nbw manipulation'); 
         se = strel('disk', dillvl1, 0);
         bwedge = imdilate(bwedge, se);
-        if options{1} == 1, 
+        
+        if ftStatus_show == 1
             figure
             imshow(bwedge, []);
         end;
         
         bwedge = imcomplement(bwedge);
-        if options{1} == 1, 
+        
+        if ftStatus_show == 1
             figure
             imshow(bwedge, []);
         end;
         
+        if ftStatus_save == 1
+            imwrite(bwedge, fullfile(ftFolder, '05_bwedge_dilation', ftFile));
+        end;
+        
         bwedge = bwareaopen(bwedge, 50);
-        if options{1} == 1, 
+        if ftStatus_show == 1
             figure
             imshow(bwedge, []);
         end;
         
         bwedge = imclearborder(bwedge); %remove background 
-        if options{1} == 1, 
+        if ftStatus_show == 1
             figure
             imshow(bwedge, []);
         end;
+        
+        if ftStatus_save == 1
+            imwrite(bwedge, fullfile(ftFolder, '06_bwedge_rmbkg', ftFile));
+        end;
+        
         if dapi2 == 1,
             bwedge = bitand(bwIdapi, bwedge);
-        end
-        if options{1} == 1, 
+        end;
+        
+        if ftStatus_show == 1
             figure
             imshow(bwedge, []);
         end;
+        
         fprintf('\ncolocalize with dapi');
         
         % select by size       
         fprintf('\nfilter by size');
         
         edgebwBrain = bwareafilt(bwedge, [1000, ]);
-        if options{1} == 1, 
+        
+        if ftStatus_show == 1
             figure
             imshow(edgebwBrain, []);
         end;
@@ -167,7 +201,7 @@ function outI = brainseg(I, options)
         edgebwBrain = bwareafilt(edgebwBrain, bwcount);
         edgebwBrain = imfill(edgebwBrain, 'holes');
         
-        if options{1} == 1, 
+        if ftStatus_show == 1
             figure
             imshow(edgebwBrain, []);
         end;
@@ -181,12 +215,18 @@ function outI = brainseg(I, options)
         objectcount = cc.NumObjects;
         fprintf('\nobejct number: %d', objectcount);
         edgethrd = edgethrd - 0.02;
+        
         fprintf('\noedgethrd: %d', edgethrd);
+        
         x = x+1
     end
+    
+    
     fprintf('\nbrain detection end...');
     % figure; imshow(edgebwBrain, []);
-    if options{1} == 1, imwrite(edgebwBrain, fullfile(ftFolder, '05_BW.png')), end;
+    if ftStatus_save == 1
+        imwrite(edgebwBrain, fullfile(ftFolder, '07_BW', ftFile));
+    end;
     
     cc = bwconncomp(edgebwBrain);
     L = labelmatrix(cc);
