@@ -1,3 +1,8 @@
+% Code for image_processing.m
+% Filter 01
+% By Mike Shih
+% 01-01-2019
+
 function I_TIF = bf2arrayxyc(I, Idx)
 % BF2ARRAYXYC convert multiple-channel 2D image from BIOFORMATS(bfmatlab)
 % to a 3D array. I_TIF = BF2ARRAYXYC(I) takes the first element of BIOFORMATS 

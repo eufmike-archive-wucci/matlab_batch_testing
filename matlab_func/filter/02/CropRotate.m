@@ -1,3 +1,8 @@
+% Code for image_processing.m
+% Filter 02
+% By Mike Shih
+% 01-01-2019
+
 function outI = CropRotate(inI)
     fprintf('\nfunction CropRotate.m start...')
     I = imlincomb(1/9, inI(:, :, 1), 4/9, inI(:, :, 2), 4/9, inI(:, :, 3));

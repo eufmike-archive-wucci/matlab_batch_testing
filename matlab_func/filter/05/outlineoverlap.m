@@ -1,3 +1,8 @@
+% Code for image_processing.m
+% Filter 05
+% By Mike Shih
+% 01-01-2019
+
 function img_ol_rgb = outlineoverlap(I, BW)  
     fprintf('\n function outlineoverlap.m start:');
 

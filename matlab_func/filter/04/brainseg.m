@@ -1,3 +1,8 @@
+% Code for image_processing.m
+% Filter 04
+% By Mike Shih
+% 01-01-2019
+
 function outI = brainseg(I, options)
     fprintf('\nbrainseg function start...');
 

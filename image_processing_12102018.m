@@ -8,6 +8,9 @@
 
 % cd '/Users/michaelshih/Documents/wucci_data/batch_test/';
 % home
+codepath = '/Users/michaelshih/Documents/code/wucci/mast_lab_code';
+addpath(genpath(codepath));
+
 cd '/Users/michaelshih/Documents/code/wucci/mast_lab_code';
 
 close all;
@@ -19,6 +22,8 @@ profile on
 % get folder names
 % folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
 folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab/Mast_Lab_002';
+
+
 imgfolder = 'resource';
 img_path = fullfile(folder_path, imgfolder);
 
@@ -61,7 +66,7 @@ fileExt = fileExt(1:filtercount);
 idxresults = {};
 fileresults = {};
 
-% house keeping files 
+% load house keeping files 
 brainsegparfile = fullfile(folder_path, 'code', 'data', 'brainsegpar.csv');
 brainsegpar = csvread(brainsegparfile);
 smthparfile = fullfile(folder_path, 'code', 'data', 'smthpar.csv');
@@ -75,8 +80,13 @@ expandlevel = csvread(expandlevelfile);
 for m = 1:filtercount
     foldername = filters{m};
     
+    cmpfolder = dir(folder_path);
+    cmpfoldernested = {cmpfolder.name}';
+    cmpfoldernested_nodot = removedot(cmpfoldernested); 
+    
+    
     % the existance of folder
-    if any(strcmp(foldernested_nodot, foldername)) == 0
+    if any(strcmp(cmpfoldernested_nodot, foldername)) == 0
             mkdir(fullfile(folder_path, foldername));
     end
     
@@ -89,6 +99,7 @@ for m = 1:filtercount
     inputidx = ~ismember(inputfiles_noext, outputfiles_noext);
     idxresults{m} = inputidx;
     fileresults{m} = inputfiles_noext(inputidx);    
+    
 end
 
 % check the existance of finetuning folder
@@ -146,9 +157,9 @@ fprintf('\nnumber of workers: %d\n', parforArg);
 
 % parpool('local', 4);
 % parfor m = 1:numFiles
-parfor (m = 1:numFiles, parforArg)
-% for m = 1:1
-% for m = 1:numFiles 
+% parfor (m = 1:numFiles, parforArg) % <-
+% for m = 1:1 
+for m = 1:numFiles % <- 
     fprintf('\nForloop start...');
     if (sum(idxresultsMat(m, :)) == 0)
         continue;
@@ -290,7 +301,7 @@ parfor (m = 1:numFiles, parforArg)
     
     
     % ================================================================================================
-    % Filter 05: outlineoverlap.m
+    % Filter 05: outlineoverlap.m & extendedproperty.m
 
     filter_order = filter_order + 1;
     fprintf('\nFilter %d %s start\n', filter_order, filters{filter_order});

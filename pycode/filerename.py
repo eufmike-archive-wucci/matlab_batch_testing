@@ -1,3 +1,9 @@
+# 01-01-2019
+# Mike Shih
+
+# This script is designed for renaming the files by using python os and sys. 
+# Files are generated from Zen export. 
+ 
 # %%
 import os, sys
 import re
