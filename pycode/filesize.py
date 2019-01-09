@@ -1,3 +1,8 @@
+# 01-01-2019
+# Mike Shih
+
+# This script will print file size.
+
 # %%
 import os, sys
 import re

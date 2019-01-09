@@ -40,13 +40,19 @@ function outI = brainseg(I, options)
     fprintf('\nftFolder: %s', ftFolder);
     fprintf('\nftFolder: %s', ftFile);
     
-    dapithrd = pars(1);
-    edgethrd = pars(2);
-    dillvl1 = pars(3);
-    dapi2 = pars(4);
-    dillvl2 = pars(5);
-    erolvl1 = pars(6);
-    bwcount = pars(7);
+    dapithrdboth = pars(1);
+    dapithrdmode = pars(2);
+    dapithrd = pars(3);
+    dapisensitivity = pars(4);
+    dapirmbkg = pars(5);
+    edgethrd = pars(6);
+    dillvl1 = pars(7);
+    dapi2 = pars(8);
+    dillvl2 = pars(9);
+    erolvl1 = pars(10);
+    bwcount = pars(11);
+    dapirmbg = pars(12);
+    
     fprintf('\narg set finish...');
 
     
@@ -64,11 +70,31 @@ function outI = brainseg(I, options)
     
     % use thresholding strategy for defining DAPI positive region
     fprintf('\ncreate DAPI binary start...');
-    bwIdapi = imbinarize(uint16(bldaptI), 'adaptive', 'Sensitivity', dapithrd);
     
+    
+    if dapithrdboth == 1
+        bwIdapi1 = imbinarize(uint16(bldaptI), dapithrd);
+        bwIdapi2 = imbinarize(uint16(bldaptI), 'adaptive', 'Sensitivity', dapisensitivity);
+        bwIdapi = bitor(bwIdapi1, bwIdapi2);
+        
+    else
+        if dapithrdmode == 1
+            bwIdapi = imbinarize(uint16(bldaptI), dapithrd);
+        else        
+            bwIdapi = imbinarize(uint16(bldaptI), 'adaptive', 'Sensitivity', dapisensitivity);
+        end;        
+    end;
+    
+    if ftStatus_show == 1
+        figure
+        imshow(bwIdapi, []);
+    end;
+    
+    if dapirmbkg == 1
     % remove the biggest object which should be the outter frame (background)
-    bwIdapi = bwareafilt(bwIdapi, 1);
-    fprintf('\ncreate DAPI binary end...');
+        bwIdapi = bwareafilt(bwIdapi, 1);
+        fprintf('\ncreate DAPI binary end...');
+    end;
     
     % show image
     if ftStatus_show == 1
@@ -145,40 +171,42 @@ function outI = brainseg(I, options)
         se = strel('disk', dillvl1, 0);
         bwedge = imdilate(bwedge, se);
         
-        if ftStatus_show == 1
-            figure
-            imshow(bwedge, []);
-        end;
-        
+        % bw open imcomplement
         bwedge = imcomplement(bwedge);
         
-        if ftStatus_show == 1
-            figure
-            imshow(bwedge, []);
-        end;
+        % bw open
+        bwedge = bwareaopen(bwedge, 50);
         
         if ftStatus_save == 1
             imwrite(bwedge, fullfile(ftFolder, '05_bwedge_dilation', ftFile));
         end;
         
-        bwedge = bwareaopen(bwedge, 50);
-        if ftStatus_show == 1
-            figure
-            imshow(bwedge, []);
+        if dapirmbg == 1,
+            bwedge = bitand(bwIdapi, bwedge);
         end;
         
-        bwedge = imclearborder(bwedge); %remove background 
+        if ftStatus_save == 1
+            imwrite(bwedge, fullfile(ftFolder, '06_bwedge_dapicolo_1', ftFile));
+        end;
+        
+        % remove background 
+        bwedge = imclearborder(bwedge);
+        
         if ftStatus_show == 1
             figure
             imshow(bwedge, []);
         end;
         
         if ftStatus_save == 1
-            imwrite(bwedge, fullfile(ftFolder, '06_bwedge_rmbkg', ftFile));
+            imwrite(bwedge, fullfile(ftFolder, '07_bwedge_rmbkg', ftFile));
         end;
         
         if dapi2 == 1,
             bwedge = bitand(bwIdapi, bwedge);
+        end;
+        
+        if ftStatus_save == 1
+            imwrite(bwedge, fullfile(ftFolder, '08_bwedge_dapicolo_2', ftFile));
         end;
         
         if ftStatus_show == 1
@@ -230,7 +258,7 @@ function outI = brainseg(I, options)
     fprintf('\nbrain detection end...');
     % figure; imshow(edgebwBrain, []);
     if ftStatus_save == 1
-        imwrite(edgebwBrain, fullfile(ftFolder, '07_BW', ftFile));
+        imwrite(edgebwBrain, fullfile(ftFolder, '09_BW', ftFile));
     end;
     
     cc = bwconncomp(edgebwBrain);

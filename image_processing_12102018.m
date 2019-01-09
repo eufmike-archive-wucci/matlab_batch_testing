@@ -44,7 +44,9 @@ inputfiles_noext = rmext(inputfiles);
 % inputfiles_noext = inputfiles_noext(1:4);
 inputfiles_noext = inputfiles_noext(1:254);
 
-filtercount = 14;
+finetuningmode_vis = false; 
+filtercount = 4;
+
 % define the filter
 filters = {'01_tif_images'; '02_crop_rotate'; '03_crop_rotate_resized'; ...
             '04_BWbrain'; '05_BWoutlinergb'; ...
@@ -111,7 +113,10 @@ end
 ftFolder = fullfile(folder_path, 'finetuning');
 
 ftsteps = {'01_dapi_binary'; '02_488'; '03_647'; ...
-        '04_bwedge'; '05_bwedge_dilation'; '06_bwedge_rmbkg'; '07_BW';};
+        '04_bwedge'; '05_bwedge_dilation'; ...
+        '06_bwedge_dapicolo_1'; ...
+        '07_bwedge_rmbkg'; '08_bwedge_dapicolo_2'; ...
+        '09_BW';};
 
 ftFolder_folderlist = dir(ftFolder);
 ftFoldernested = {ftFolder_folderlist.name}';
@@ -157,9 +162,9 @@ fprintf('\nnumber of workers: %d\n', parforArg);
 
 % parpool('local', 4);
 % parfor m = 1:numFiles
-% parfor (m = 1:numFiles, parforArg) % <-
+parfor (m = 1:numFiles, parforArg) % <-
 % for m = 1:1 
-for m = 1:numFiles % <- 
+% for m = 1:numFiles % <- 
     fprintf('\nForloop start...');
     if (sum(idxresultsMat(m, :)) == 0)
         continue;
@@ -212,6 +217,9 @@ for m = 1:numFiles % <-
 
     fprintf('\nFilter %d end\n', filter_order);
     
+    if filtercount == 1
+        continue
+    end
     
     % ================================================================================================
     % Filter 02: CropRotate.m
@@ -235,7 +243,9 @@ for m = 1:numFiles % <-
 
     fprintf('\nFilter %d end\n', filter_order);
     
-    
+    if filtercount == 2
+        continue
+    end
     
     % ================================================================================================
     % Filter 03: imresize.m
@@ -259,6 +269,10 @@ for m = 1:numFiles % <-
     end    
     I_TIF = [];
     fprintf('\nFilter %d end\n', filter_order);
+    
+    if filtercount == 3
+        continue
+    end
     
     
     % ================================================================================================
@@ -287,7 +301,7 @@ for m = 1:numFiles % <-
         % finetune folder path
         ftFile = strcat(char(filename_noext(m)), '.tif');
         
-        options = {brainsegpar(idxlocation(m), :), false, true, ftFolder, ftFile};
+        options = {brainsegpar(idxlocation(m), :), finetuningmode_vis, true, ftFolder, ftFile};
         brainsegI = brainseg(exI, options);
         imwrite(brainsegI, outputfilename);
         % ********************************
@@ -298,7 +312,9 @@ for m = 1:numFiles % <-
 
     fprintf('\nFilter %d end\n', filter_order);
 
-    
+    if filtercount == 4
+        continue
+    end
     
     % ================================================================================================
     % Filter 05: outlineoverlap.m & extendedproperty.m
@@ -342,7 +358,9 @@ for m = 1:numFiles % <-
 
     fprintf('\nFilter %d end\n', filter_order);
     
-    continue
+    if filtercount == 5
+        continue
+    end
     
     % ================================================================================================
     % Filter 06: folder: SelectedROI
@@ -389,7 +407,11 @@ for m = 1:numFiles % <-
     end
 
     fprintf('\nFilter %d end\n', filter_order);
-
+    
+    if filtercount == 6
+        continue
+    end
+    
     % ================================================================================================
     % Filter 07: folder: SelectedBWraw
 
@@ -410,7 +432,11 @@ for m = 1:numFiles % <-
     end
 
     fprintf('\nFilter %d end\n', filter_order);
-
+    
+    if filtercount == 7
+        continue
+    end
+    
     % ================================================================================================
     % Filter 08: bw2bwary.m & smthbwary.m
 
@@ -440,6 +466,10 @@ for m = 1:numFiles % <-
     end
 
     fprintf('\nFilter %d end\n', filter_order);
+    
+    if filtercount == 8
+        continue
+    end
     
     % ================================================================================================
     % Filter 09: folder: BWsmthoutlinergb 
@@ -483,6 +513,10 @@ for m = 1:numFiles % <-
 
     fprintf('\nFilter %d end\n', filter_order);
 
+    if filtercount == 9
+        continue
+    end
+    
     % ================================================================================================
     % Filter 10: folder: BWsmthoutlinergb
     % 10_BWsmthadj
@@ -515,7 +549,10 @@ for m = 1:numFiles % <-
 
     fprintf('\nFilter %d end\n', filter_order);
 
-
+    if filtercount == 10
+        continue
+    end
+    
     % % ================================================================================================
     % Filter 11: folder: SelectedBrainGrey
     filter_order = filter_order + 1;
@@ -554,6 +591,10 @@ for m = 1:numFiles % <-
 
     fprintf('\nFilter %d end\n', filter_order);
 
+    if filtercount == 11
+        continue
+    end
+    
     % ================================================================================================
     % Filter 12: folder: SelectedBrainRGB
     
@@ -600,6 +641,10 @@ for m = 1:numFiles % <-
 
     fprintf('\nFilter %d end\n', filter_order);
 
+    if filtercount == 12
+        continue
+    end
+    
     % ================================================================================================
     % Filter 13: imresize.m
 
@@ -625,6 +670,10 @@ for m = 1:numFiles % <-
     I_TIF = [];
     fprintf('\nFilter %d end\n', filter_order);
 
+    if filtercount == 13
+        continue
+    end
+    
     % ================================================================================================
     % Filter 14: 14_SelectedBrainRGB_4x
 
@@ -679,6 +728,10 @@ for m = 1:numFiles % <-
 
     fprintf('\nFilter %d end\n', filter_order);
 
+    if filtercount == 14
+        continue
+    end
+    
     % ================================================================================================
     % clear variable
     fprintf('\nRemove variables\n');
