@@ -6,5 +6,79 @@ This project was to contour the brain region on embryonic slide scans acquired f
 
 ![](/figures/embryonic_brain.png)
 
+
+## Information
+* Microscope: Zeiss Axio Scan.Z1
+* Images: 
+  * Channels: 
+    * Channel 1: DAPI
+    * Channel 2: Alexa 488
+    * Channel 3: Alexa 647
+---
+## Workflow
+### Filters (also called functions or steps)
+The MATLAB code executes 14 filters to segment the brain regions in embryonic head tissue. 
+1. Filter 01: convert images from .ome.tif to .tif
+2. Filter 02: Crop and rotate images
+3. Filter 03: resize images (default: 0.1x)
+4. Filter 04: performing brain segmentation with given parameter
+5. Filter 05: overlap the outline of labels onto images
+6. Filter 06: create images only with selected labels (region of interest)
+7. Filter 07: create binary image of selected masks
+8. Filter 08: save smooth binary into variables
+9. Filter 09: smoothed outline of masks
+10. Filter 10: smoothed masks
+11. Filter 11: gray scale images
+12. Filter 12: RGB image with ROI (0.1x)
+13. Filter 13: resize to 0.4x resolution
+14. Filter 14: RGB image with ROI (0.4x)
+
+### Data Preparation
+1. Collected images (.czi) from Zeiss Axio
+2. Using Zen Blue software to convert images from .czi to .ome.tif
+3. Copy images to the storage drive:
+   1. Create a folder under `/Volumes/LaCie_DataStorage/Mast_Lab/data`, for example 'Mast_Lab_demo'
+   2. Save images under `/Volumes/LaCie_DataStorage/Mast_Lab/data/Mast_Lab_demo/resource/raw_output`. The folder name needs to be "raw_output"
+4. Load parameters:
+   1. Create `/Volumes/LaCie_DataStorage/Mast_Lab/code`
+   2. Create `/Volumes/LaCie_DataStorage/Mast_Lab/code/data`
+   3. Copy the following files from the previous experiments (they can be empty sheets):
+      * `brainsegpar.csv`
+      * `smthpar.csv`
+      * `brainregion.csv`
+      * `expand.csv`
+
+### Image Processing
+1. Open `image_processing_demo.m` in MATLAB
+2. Define the following variable in the dialog:
+   * `filtercount`: the amount of filter/functions when executing the code
+   * `image_start`: the number of starting image
+   * `image_end`: the number of ending image
+   * `par_switch`: run batch or not
+3. Create segmentation with label ID
+   1. Set `filtercount` to 5
+   2. Run the code
+   3. Open images in `05_BWoutlinergb`, document the label ID into `brainregion.csv` in `/code/data`
+4. Finalize the selection
+   1. Set `filtercount` to 14
+   2. Run the code
+
+### Finetuning the mask
+1. `brainsegpar.csv` defines parameters which control the function `brainseg.m`
+   1. `dapithrdboth`
+   2. `dapithrdmode`
+   3. `dapithrd`
+   4. `dapisensitivity`
+   5. `dapirmbkg`
+   6. `edgethrd`
+   7. `dillvl1`
+   8. `dapi2`
+   9. `dillvl2`
+   10. `erolvl1`
+   11. `bwcount`
+   12. `dapirmbg`
+2. `smthpar.csv` defines parameters for smoothing the label in `smthbway.m`
+3. `expand.csv` defines parameters which control the function `strel`
+
 ## License
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
