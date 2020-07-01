@@ -84,8 +84,9 @@ The MATLAB code executes 14 filters to segment the brain regions in embryonic he
 ### 05_Reconstruct 3D brain
 1. Select images based on their quality
    1. Create a list of filename by running `savefilename.m`
-   2. Generate a file list like the one in `code/data`
-   3. Run `fileselection.m` on both 0.1x and 0.4x images
+   2. Generate `filenamelist.csv` in `code/note`, copy the file into `code/data`
+   3. Edit `filenamelist.csv` and input `0` to discarded images under variable `accept_code`
+   4. Run `fileselection_script.m` on both 0.1x and 0.4x images
       1. input folders: 
          1. `12_SelectedBrainRGB`
          2. `14_SelectedBrainRGB_4x`

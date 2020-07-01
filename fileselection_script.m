@@ -1,15 +1,18 @@
 close all; clear all;
-cd '/Users/michaelshih/Documents/wucci_data/batch_test/code';
 
-folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab_current/';
-inputfolder = '14_SelectedBrainRGB_4x';
-outputfolder = 'raw_for_construction_4x'
+folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab/data/Mast_Lab_demo';
+inputfolder = '12_SelectedBrainRGB';
+outputfolder = 'raw_for_construction';
+
+if ~exist(fullfile(folder_path, outputfolder), 'dir')
+    mkdir(fullfile(folder_path, outputfolder));
+end 
 
 % input the reviewed file-pick as table
 fileselection_path = fullfile(folder_path, 'code', 'data', 'filenamelist.csv');
-fileselection = readtable(fileselection_path);
+fileselection = readtable(fileselection_path, 'Delimiter', ',');
 filenamelist = fileselection.filenamelist;
-pick = fileselection.accept_1;
+pick = fileselection.accept_code;
 
 % check size
 size(filenamelist, 1)
@@ -50,13 +53,15 @@ for m = 1: length(file_notpick)
 	file_notpick_replace(m) = loc_compare;
 end
 
-% create file name for source images and renamed dummy files
-file_notpick_replace_filename = filenamelist(file_notpick_replace); 
-file_notpick_rename = strcat(file_notpick, '_dummy.tif');
-inputfilelist = fullfile(folder_path, inputfolder, strcat(file_notpick_replace_filename, '.tif'));
-outputfilelist = fullfile(folder_path, outputfolder, strcat(file_notpick_rename));
+if exist('file_notpick_replace', 'var')  
+    % create file name for source images and renamed dummy files
+    file_notpick_replace_filename = filenamelist(file_notpick_replace); 
+    file_notpick_rename = strcat(file_notpick, '_dummy.tif');
+    inputfilelist = fullfile(folder_path, inputfolder, strcat(file_notpick_replace_filename, '.tif'));
+    outputfilelist = fullfile(folder_path, outputfolder, strcat(file_notpick_rename));
 
-% copy files
-for m = 1:size(inputfilelist, 1)
-	copyfile(inputfilelist{m}, outputfilelist{m});
+    % copy files
+    for m = 1:size(inputfilelist, 1)
+        copyfile(inputfilelist{m}, outputfilelist{m});
+    end
 end

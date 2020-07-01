@@ -1,7 +1,6 @@
 close all; clear all;
-cd '/Users/michaelshih/Documents/code/wucci/mast_lab_code';
 
-folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab/Mast_Lab_002';
+folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab/data/Mast_Lab_demo';
 foldername = 'resource';
 sudfoldername = 'raw_output';
 
@@ -11,6 +10,9 @@ filenamelist = rmext(filenamelist);
 filenamelist = rmext(filenamelist);
 filenamelist = cell2table(filenamelist);
 
+if ~exist(fullfile(folder_path, 'code', 'note'), 'dir')
+    mkdir(fullfile(folder_path, 'code', 'note'));
+end 
 
 datafolder = fullfile(folder_path, 'code', 'note', 'filenamelist.csv');
 writetable(filenamelist, datafolder);
