@@ -28,7 +28,7 @@ image_end = 5;
 % run parallel processing
 par_switch = true;
 
-prompt = {'filtercount:','image_start:', 'image_end:', 'image_end'};
+prompt = {'filtercount:','image_start:', 'image_end:', 'Parallel'};
 dlgtitle = 'Parameters';
 dims = [1 35];
 definput = {'14', '1', '6', 'true'};

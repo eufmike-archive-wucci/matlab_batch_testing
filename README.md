@@ -34,7 +34,7 @@ The MATLAB code executes 14 filters to segment the brain regions in embryonic he
 14. Filter 14: RGB image with ROI (0.4x)
 
 ### 02_Data Preparation
-1. Collected images (.czi) from Zeiss Axio
+1. Collected images (.czi) from Zeiss Axio Scan
 2. Using Zen Blue software to convert images from .czi to .ome.tif
 3. Copy images to the storage drive:
    1. Create a folder under `/Volumes/LaCie_DataStorage/Mast_Lab/data`, for example 'Mast_Lab_demo'
