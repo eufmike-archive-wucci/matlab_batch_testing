@@ -1,6 +1,8 @@
 % cd '/Users/michaelshih/Documents/wucci_data/batch_test/';
 % home
-cd '/Users/michaelshih/Documents/wucci_data/batch_test/code/';
+addpath(genpath(pwd));
+addpath(genpath(strcat(pwd, '/resource')))
+addpath(genpath(strcat(pwd, '/matlab_func')))
 
 clear all
 tic
@@ -9,7 +11,7 @@ profile on
 %% creat the list for unprocessed files
 % get folder names
 % folder_path = '/Users/michaelshih/Documents/wucci_data/batch_test/';
-folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab_current/';
+folder_path = '/Volumes/LaCie_DataStorage/Mast_Lab/data/Mast_Lab_demo';
 
 foldernedted = dir(folder_path);
 foldernested = {foldernedted.name}';

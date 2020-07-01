@@ -16,8 +16,8 @@ This project was to contour the brain region on embryonic slide scans acquired f
     * Channel 3: Alexa 647
 ---
 ## Workflow
-### Filters (also called functions or steps)
-The MATLAB code executes 14 filters to segment the brain regions in embryonic head tissue. 
+### 01_Summary
+The MATLAB code executes 14 filters to segment the brain regions in embryonic head tissue. Filters are also called functions or steps. 
 1. Filter 01: convert images from .ome.tif to .tif
 2. Filter 02: Crop and rotate images
 3. Filter 03: resize images (default: 0.1x)
@@ -33,7 +33,7 @@ The MATLAB code executes 14 filters to segment the brain regions in embryonic he
 13. Filter 13: resize to 0.4x resolution
 14. Filter 14: RGB image with ROI (0.4x)
 
-### Data Preparation
+### 02_Data Preparation
 1. Collected images (.czi) from Zeiss Axio
 2. Using Zen Blue software to convert images from .czi to .ome.tif
 3. Copy images to the storage drive:
@@ -48,13 +48,14 @@ The MATLAB code executes 14 filters to segment the brain regions in embryonic he
       * `brainregion.csv`
       * `expand.csv`
 
-### Image Processing
+### 03_Image Processing
 1. Open `image_processing_demo.m` in MATLAB
 2. Define the following variable in the dialog:
    * `filtercount`: the amount of filter/functions when executing the code
    * `image_start`: the number of starting image
    * `image_end`: the number of ending image
    * `par_switch`: run batch or not
+
 3. Create segmentation with label ID
    1. Set `filtercount` to 5
    2. Run the code
@@ -63,7 +64,7 @@ The MATLAB code executes 14 filters to segment the brain regions in embryonic he
    1. Set `filtercount` to 14
    2. Run the code
 
-### Finetuning the mask
+### 04_Fine-tuning the mask
 1. `brainsegpar.csv` defines parameters which control the function `brainseg.m`
    1. `dapithrdboth`
    2. `dapithrdmode`
@@ -80,5 +81,40 @@ The MATLAB code executes 14 filters to segment the brain regions in embryonic he
 2. `smthpar.csv` defines parameters for smoothing the label in `smthbway.m`
 3. `expand.csv` defines parameters which control the function `strel`
 
-## License
+### 05_Reconstruct 3D brain
+1. Select images based on their quality
+   1. Create a list of filename by running `savefilename.m`
+   2. Generate a file list like the one in `code/data`
+   3. Run `fileselection.m` on both 0.1x and 0.4x images
+      1. input folders: 
+         1. `12_SelectedBrainRGB`
+         2. `14_SelectedBrainRGB_4x`
+      2. output folder: 
+         1. `raw_for_construction`
+         2. `raw_for_construction_4x`
+2. Use Brain Maker to reconstruct the 3D brain from files in `raw_for_construction` and `raw_for_construction_4x`
+3. Export the aligned images
+
+### 06_Export the results
+1. Create a folder for exporting files. For Example: `Mast_Lab_Final`, then create following folders
+   1. `01_raw`
+   2. `02_whole_1`
+   3. `03_brain_1`
+   4. `04_brain_1_aligned`
+   5. `05_whole_4`
+   6. `06_brain_4`
+   7. `07_brain_4_aligned`
+   8. `doc`
+   9. `videos`
+2. Copy raw files from `01_tif_images` to `01_raw`
+3. Histogram standardization
+   1. Execute code `equhisto.m`
+   2. Define the input and output folder on both 0.1x and 0.4x
+      1. input: `03_crop_rotate_resized` or `13_crop_rotate_resized_4x`
+      2. output: `02_whole_1` or `05_whole_4`
+4. Copy the aligned images to `04_brain_1_aligned` and `07_brain_4_aligned`.
+5. Export 3D videos from Imaris
+6. Prepare documents
+
+# License
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.

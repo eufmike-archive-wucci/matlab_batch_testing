@@ -9,6 +9,7 @@
 % home
 addpath(genpath(pwd));
 addpath(genpath(strcat(pwd, '/resource')))
+addpath(genpath(strcat(pwd, '/matlab_func')))
 
 close all;
 clear all;
@@ -22,7 +23,7 @@ folder_path = uigetdir(folder_path, 'Select the main directory')
 % define the amount of steps to run
 filtercount = 14;
 % range of input images
-image_start = 4;
+image_start = 3;
 image_end = 5;
 % run parallel processing
 par_switch = true;
@@ -109,15 +110,18 @@ if ~exist(fullfile(folder_path, 'code'), 'dir')
     mkdir(fullfile(folder_path, 'code', 'note'));
 end
 
-brainsegparfile = fullfile(folder_path, 'code', 'data', 'brainsegpar.csv');
+brainsegparfile = fullfile(folder_path, 'code', 'data', 'brainsegpar.csv');    
 brainsegpar = csvread(brainsegparfile);
 brainsegpar = brainsegpar(image_start:image_end, :);
+
 smthparfile = fullfile(folder_path, 'code', 'data', 'smthpar.csv');
 smthpar = csvread(smthparfile);
 smthpar = smthpar(image_start:image_end, :);
+
 BRFilename = fullfile(folder_path, 'code', 'data', 'brainregion.csv');
 brainROIcode = csvread(BRFilename);
 brainROIcode = brainROIcode(image_start:image_end, :);
+
 expandlevelfile = fullfile(folder_path, 'code', 'data', 'expand.csv');
 expandlevel = csvread(expandlevelfile);
 expandlevel = expandlevel(image_start:image_end, :);
